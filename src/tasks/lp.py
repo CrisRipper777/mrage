@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from functools import partial
 import json
 import logging
-import math
 from pathlib import Path
 import random
 
@@ -28,6 +27,7 @@ from src.tasks.common import (
     log_optimizer,
     resolve_num_neighbors,
     scheduler_step,
+    validation_metrics_match,
 )
 from src.tasks.inference import infer_all_embeddings, resolve_inference_mode
 from src.utils.metrics import format_pct
@@ -1075,19 +1075,15 @@ def evaluate_lp_checkpoint(
     checkpoint_metrics = checkpoint.get("metrics", {})
     for name, value in validation.items():
         metric_name = f"val_{name}"
-        if metric_name in checkpoint_metrics and not math.isclose(
-            float(checkpoint_metrics[metric_name]), value, rel_tol=0.0, abs_tol=1e-12
+        if metric_name in checkpoint_metrics and not validation_metrics_match(
+            checkpoint_metrics[metric_name], value
         ):
             raise ValueError(f"recomputed Validation {metric_name} differs from checkpoint")
-        if metric_name in validation_payload.get("metrics", {}) and not math.isclose(
-            float(validation_payload["metrics"][metric_name]), value,
-            rel_tol=0.0, abs_tol=1e-12,
+        if metric_name in validation_payload.get("metrics", {}) and not validation_metrics_match(
+            validation_payload["metrics"][metric_name], value
         ):
             raise ValueError(f"saved validation record disagrees for {metric_name}")
-    if not math.isclose(
-        float(checkpoint_metrics["val_mrr"]), validation["mrr"],
-        rel_tol=0.0, abs_tol=1e-12,
-    ):
+    if not validation_metrics_match(checkpoint_metrics["val_mrr"], validation["mrr"]):
         raise ValueError("recomputed Validation MRR differs from selected checkpoint")
 
     test = _evaluate_split(

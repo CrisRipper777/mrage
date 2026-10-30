@@ -7,6 +7,13 @@ import torch
 from omegaconf import ListConfig
 
 
+def validation_metrics_match(saved_value: float, recomputed_value: float) -> bool:
+    """Compare reloaded Validation metrics with practical floating-point tolerance."""
+    return math.isclose(
+        float(saved_value), float(recomputed_value), rel_tol=1e-6, abs_tol=1e-6
+    )
+
+
 def clone_state_dict(module: torch.nn.Module) -> dict[str, torch.Tensor]:
     return {key: value.detach().cpu().clone() for key, value in module.state_dict().items()}
 

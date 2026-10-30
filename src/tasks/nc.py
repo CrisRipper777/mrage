@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import math
 from pathlib import Path
 
 import torch
@@ -13,7 +12,10 @@ from torch.utils.data import DataLoader as TorchDataLoader
 
 from src.data import MAGData
 from src.models import build_model
-from src.tasks.common import build_optimizer, clone_state_dict, load_state_dict_cpu, log_optimizer, scheduler_step
+from src.tasks.common import (
+    build_optimizer, clone_state_dict, load_state_dict_cpu, log_optimizer,
+    scheduler_step, validation_metrics_match,
+)
 from src.tasks.inference import infer_all_embeddings, resolve_inference_mode
 from src.utils.metrics import format_pct
 from src.utils.run_artifacts import write_json_atomic
@@ -550,11 +552,9 @@ def evaluate_nc_checkpoint(
     for metric in ("val_acc", "val_macro_f1"):
         expected = float(saved_metrics[metric])
         if metric in expected_validation.get("metrics", {}):
-            if not math.isclose(
-                expected, float(expected_validation["metrics"][metric]), rel_tol=0.0, abs_tol=1e-12
-            ):
+            if not validation_metrics_match(expected, expected_validation["metrics"][metric]):
                 raise ValueError(f"saved validation record disagrees with checkpoint for {metric}")
-        if not math.isclose(expected, validation[metric], rel_tol=0.0, abs_tol=1e-12):
+        if not validation_metrics_match(expected, validation[metric]):
             raise ValueError(
                 f"recomputed Validation {metric}={validation[metric]} differs from checkpoint {expected}"
             )

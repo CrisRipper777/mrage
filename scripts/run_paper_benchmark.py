@@ -177,6 +177,20 @@ def _metric_payload(checkpoint: dict, args, seed: int, split_id: str) -> dict:
     }
 
 
+def _load_completed_test_metrics(path: Path) -> dict:
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"run is marked complete but Final Test results are missing: {path}"
+        )
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"completed Final Test results cannot be read: {path}") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"completed Final Test results must be a JSON object: {path}")
+    return payload
+
+
 def _prepare_run(args, seed: int, run_dir: Path, config_hash: str, source_commit: str):
     cfg = _compose_config(args, seed)
     cfg.task.phase = "train"
@@ -291,15 +305,14 @@ def _run_one(args, seed: int, model: str, output_root: Path, source_commit: str)
             if status.get("status") == "final_test_complete":
                 if status.get("test_evaluation_count") != 1:
                     raise RuntimeError("completed run has an invalid Test evaluation count")
-                if final_path.is_file():
-                    final_payload = json.loads(final_path.read_text(encoding="utf-8"))
-                    metadata_path = run_dir / "run_metadata.json"
-                    if metadata_path.is_file():
-                        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-                        if metadata.get("test_evaluation_count") != 1:
-                            metadata["test_evaluation_count"] = 1
-                            metadata["final_test_metrics"] = final_payload.get("metrics", {})
-                            write_json_atomic(metadata_path, metadata)
+                final_payload = _load_completed_test_metrics(final_path)
+                metadata_path = run_dir / "run_metadata.json"
+                if metadata_path.is_file():
+                    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+                    if metadata.get("test_evaluation_count") != 1:
+                        metadata["test_evaluation_count"] = 1
+                        metadata["final_test_metrics"] = final_payload.get("metrics", {})
+                        write_json_atomic(metadata_path, metadata)
                 print(f"SKIP complete: {run_dir}")
                 return "complete"
             if status.get("status") != "validation_complete":

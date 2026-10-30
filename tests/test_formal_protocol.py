@@ -10,13 +10,13 @@ import torch.nn as nn
 from omegaconf import OmegaConf
 
 from scripts.collect_results import collect
-from scripts.run_paper_benchmark import _compose_config, _config_hash, _prepare_run
+from scripts.run_paper_benchmark import _compose_config, _config_hash, _prepare_run, _run_one
 from src.data import MAGData
 from src.data.loaders import _load_magb
 from src.data.splits import generate_nc_split
 from src.tasks.lp import _evaluate_split as evaluate_lp_split
 from src.tasks.nc import _resolve_nc_eval_labels
-from src.tasks.common import build_optimizer, optimizer_metadata
+from src.tasks.common import build_optimizer, optimizer_metadata, validation_metrics_match
 from src.utils.run_artifacts import write_json_atomic
 from src.utils.seeds import set_seed
 from src.utils.timing import PhaseProfiler
@@ -152,6 +152,14 @@ def test_optimizer_preset_precedence_and_mrage_task_lr():
     assert metadata["parameter_groups"][0]["weight_decay"] == 3e-4
 
 
+def test_validation_metric_comparison_tolerates_small_float_differences():
+    reference = 0.5
+    assert validation_metrics_match(reference, reference)
+    assert validation_metrics_match(reference, reference + 1e-8)
+    assert validation_metrics_match(reference, reference + 1e-7)
+    assert not validation_metrics_match(reference, reference + 1e-3)
+
+
 def test_paper_runner_uses_fixed_nc_split_and_seed_independent_config_hash(tmp_path):
     from types import SimpleNamespace
 
@@ -221,3 +229,36 @@ def test_collector_excludes_incomplete_runs_and_keeps_split_config_groups(tmp_pa
     assert group_a["expected_seeds"] == "42;43;44"
     assert group_a["missing_seeds"] == "43;44"
     assert len(statuses) == 3
+
+
+@pytest.mark.parametrize(
+    ("result_state", "exception", "message"),
+    [
+        ("missing", FileNotFoundError, "Final Test results are missing"),
+        ("corrupt", RuntimeError, "cannot be read"),
+    ],
+)
+def test_paper_runner_does_not_skip_completed_run_without_readable_final_metrics(
+    tmp_path, result_state, exception, message,
+):
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        dataset="Movies", task="nc", model="mrage", device="cpu",
+        experiment_config=None, override=[], split_seed=42, seeds=[42],
+        stage="all", resume=True, dry_run=False,
+    )
+    cfg = _compose_config(args, 42)
+    config_hash = _config_hash(cfg)
+    output_root = tmp_path / "paper"
+    run_dir = output_root / "Movies" / "nc" / "mrage" / config_hash / "seed-42"
+    run_dir.mkdir(parents=True)
+    write_json_atomic(
+        run_dir / "status.json",
+        {"status": "final_test_complete", "test_evaluation_count": 1},
+    )
+    if result_state == "corrupt":
+        (run_dir / "final_test_metrics.json").write_text("{", encoding="utf-8")
+
+    with pytest.raises(exception, match=message):
+        _run_one(args, 42, "mrage", output_root, "test-commit")
