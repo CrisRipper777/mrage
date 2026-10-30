@@ -1,0 +1,37 @@
+defaults:
+  - dataset: Movies
+  - task: nc
+  - model: mlp
+  - _self_
+
+seed: 42
+num_runs: 3
+device: cuda:0
+
+paths:
+  data_root: ${oc.env:MRAGE_DATA_ROOT,/hdd1/DataInHere/YHF/data}
+  split_root: ${oc.env:MRAGE_SPLIT_ROOT,${paths.data_root}/MAGB_split}
+  output_root: outputs
+  semantic_cache_root: artifacts/semantic_graphs
+
+semantic_graph:
+  mode: auto # auto | existing | rebuild
+  knn_k: 8
+  cache_dir: ${paths.semantic_cache_root}
+  validate: true
+  faiss_seed: 2026
+  faiss_threads: 8
+  resolved_cache_path: null
+  identity_fingerprint: null
+  feature_fingerprint: null
+  candidate_fingerprint: null
+  v7b_fingerprint: null
+
+logging:
+  level: INFO
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${paths.output_root}/${now:%Y-%m-%d}/${now:%H-%M-%S}

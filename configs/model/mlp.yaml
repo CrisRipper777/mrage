@@ -1,0 +1,6 @@
+name: mlp
+hidden_dim: 256
+num_layers: 2
+dropout: 0.5
+activation: relu
+norm: batchnorm

@@ -1,0 +1,9 @@
+/artifacts/
+/outputs/
+/data/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.pt
+*.pth
