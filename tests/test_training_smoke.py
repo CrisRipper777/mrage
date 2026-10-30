@@ -10,7 +10,9 @@ from src.data.semantic_graph_manager import ensure_semantic_graph_cache
 from src.data.types import EdgeSplit, MAGData
 from src.models.factory import build_model
 from src.tasks.lp import run_lp
-from src.tasks.nc import run_nc
+from src.tasks.lp import evaluate_lp_checkpoint
+from src.tasks.nc import evaluate_nc_checkpoint, run_nc
+from src.utils.run_artifacts import write_json_atomic
 
 
 def _model_config(name: str) -> dict:
@@ -133,6 +135,7 @@ def _synthetic_data(text: torch.Tensor, visual: torch.Tensor, x: torch.Tensor) -
         x_i=visual, x_t=text, edge_index=nc_edges, y=labels,
         train_idx=nodes[:16], val_idx=nodes[16:20], test_idx=nodes[20:24],
         num_nodes=n, num_classes=3,
+        info={"nc_split_path": "synthetic-nc-split.pt", "nc_split_sha256": "synthetic-nc-split-sha"},
     )
 
     train_src = torch.arange(12)
@@ -164,6 +167,7 @@ def _synthetic_data(text: torch.Tensor, visual: torch.Tensor, x: torch.Tensor) -
         name="Smoke", source="synthetic", task="lp", x=x,
         x_i=visual, x_t=text, edge_index=train_graph,
         edge_split=edge_split, num_nodes=n,
+        info={"lp_split_path": "synthetic-lp-split.pt", "lp_split_sha256": "synthetic-lp-split-sha"},
     )
     return nc_data, lp_data
 
@@ -194,9 +198,27 @@ def test_cpu_nc_lp_and_baseline_one_epoch_smokes(tmp_path: Path) -> None:
             "v7b_fingerprint": nc_cache.metadata["v7b_fingerprint"],
         }
     )
+    nc_cfg.task.evaluate_test = False
+    nc_cfg.task.mask_test_labels = True
+    nc_cfg.task.checkpoint_path = str(tmp_path / "nc.pt")
+    nc_cfg.task.validation_metrics_path = str(tmp_path / "nc_validation.json")
+    nc_cfg.task.final_test_metrics_path = str(tmp_path / "nc_final.json")
+    nc_cfg.task.paper_run_status_path = str(tmp_path / "nc_status.json")
     nc_result = run_nc(nc_cfg, nc_data, torch.device("cpu"), logger)
     assert "val_acc" in nc_result and (tmp_path / "nc.pt").is_file()
+    assert int(nc_data.y[nc_data.test_idx].min()) >= 0
     nc_checkpoint = torch.load(tmp_path / "nc.pt", map_location="cpu", weights_only=False)
+    write_json_atomic(
+        nc_cfg.task.validation_metrics_path,
+        {"metrics": {key: value for key, value in nc_checkpoint["metrics"].items() if key.startswith("val_")}},
+    )
+    write_json_atomic(
+        nc_cfg.task.paper_run_status_path,
+        {"status": "validation_complete", "test_evaluation_count": 0},
+    )
+    nc_final = evaluate_nc_checkpoint(nc_cfg, nc_data, torch.device("cpu"), logger)
+    assert "test_acc" in nc_final
+    assert __import__("json").loads((tmp_path / "nc_final.json").read_text())["test_evaluation_count"] == 1
     nc_restored = build_model(
         nc_cfg,
         {"input_dim": 12, "num_nodes": 24, "num_classes": 3, "text_dim": 7, "visual_dim": 5},
@@ -214,6 +236,11 @@ def test_cpu_nc_lp_and_baseline_one_epoch_smokes(tmp_path: Path) -> None:
         project_root=tmp_path,
     )
     lp_cfg = _lp_cfg(lp_cache, tmp_path / "lp.pt")
+    lp_cfg.task.evaluate_test = False
+    lp_cfg.task.checkpoint_path = str(tmp_path / "lp.pt")
+    lp_cfg.task.validation_metrics_path = str(tmp_path / "lp_validation.json")
+    lp_cfg.task.final_test_metrics_path = str(tmp_path / "lp_final.json")
+    lp_cfg.task.paper_run_status_path = str(tmp_path / "lp_status.json")
     lp_result = run_lp(
         lp_cfg,
         lp_data,
@@ -222,6 +249,17 @@ def test_cpu_nc_lp_and_baseline_one_epoch_smokes(tmp_path: Path) -> None:
     )
     assert "val_mrr" in lp_result and (tmp_path / "lp.pt").is_file()
     lp_checkpoint = torch.load(tmp_path / "lp.pt", map_location="cpu", weights_only=False)
+    write_json_atomic(
+        lp_cfg.task.validation_metrics_path,
+        {"metrics": {key: value for key, value in lp_checkpoint["metrics"].items() if key.startswith("val_")}},
+    )
+    write_json_atomic(
+        lp_cfg.task.paper_run_status_path,
+        {"status": "validation_complete", "test_evaluation_count": 0},
+    )
+    lp_final = evaluate_lp_checkpoint(lp_cfg, lp_data, torch.device("cpu"), logger)
+    assert "test_mrr" in lp_final
+    assert __import__("json").loads((tmp_path / "lp_final.json").read_text())["test_evaluation_count"] == 1
     lp_restored = build_model(
         lp_cfg,
         {"input_dim": 12, "num_nodes": 24, "num_classes": None, "text_dim": 7, "visual_dim": 5},

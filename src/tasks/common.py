@@ -54,6 +54,29 @@ def build_optimizer(parameters, cfg, model=None) -> torch.optim.Optimizer:
     raise ValueError(f"task.optimizer must be adam|adamw, got {name!r}")
 
 
+def optimizer_metadata(optimizer: torch.optim.Optimizer) -> dict:
+    """Return the effective optimizer and per-group LR/decay actually in use."""
+    groups = [
+        {
+            "learning_rate": float(group["lr"]),
+            "weight_decay": float(group.get("weight_decay", 0.0)),
+            "parameter_count": sum(int(parameter.numel()) for parameter in group["params"]),
+        }
+        for group in optimizer.param_groups
+    ]
+    return {"optimizer": type(optimizer).__name__, "parameter_groups": groups}
+
+
+def log_optimizer(logger, optimizer: torch.optim.Optimizer) -> dict:
+    metadata = optimizer_metadata(optimizer)
+    formatted_groups = "; ".join(
+        f"group{index}: lr={group['learning_rate']:g}, wd={group['weight_decay']:g}"
+        for index, group in enumerate(metadata["parameter_groups"])
+    )
+    logger.info("Effective optimizer: %s | %s", metadata["optimizer"], formatted_groups)
+    return metadata
+
+
 def scheduler_step(cfg, optimizer: torch.optim.Optimizer, epoch: int, total_epochs: int) -> None:
     """Apply the optional generic warmup-cosine schedule; the frozen default is null."""
     name = str(cfg.task.get("scheduler", "null")).strip().lower()

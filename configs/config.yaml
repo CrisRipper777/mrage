@@ -6,6 +6,7 @@ defaults:
 
 seed: 42
 num_runs: 3
+dataset_split_seed: 42
 device: cuda:0
 
 paths:

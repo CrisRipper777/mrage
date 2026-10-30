@@ -1,6 +1,6 @@
 name: mrage
 
-# Frozen MR-CGE V1.3-A Final Full values.
+# Formal MRAGE defaults; hidden_dim is configurable while routing stays 4/2.
 hidden_dim: 256
 physical_hops: 3
 semantic_hops: 1

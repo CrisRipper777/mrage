@@ -52,11 +52,54 @@ conda run -n yhf_env python -m src.main \
   dataset=Movies task=nc model=gcn device=cuda:0
 ```
 
-NC uses full-graph training and selects the checkpoint by validation accuracy.
-The test split is evaluated after restoring the validation-selected checkpoint.
-Set `num_runs`, `seed`, and explicit task/model overrides for a benchmark
-protocol; the ordinary config defaults are convenient run defaults and do not
-claim to reproduce a separate published multi-seed benchmark recipe.
+MAGB NC always reads the official `*_nc_seed42_*` split, independently of the
+training seed. The ordinary config runs training seeds 42, 43, and 44 on that
+same split. NC selects by Validation Accuracy and reports Macro-F1 over all
+configured classes (`zero_division=0`).
+LP keeps its existing official edge-split path selection, including its current
+seed interpolation where configured; the NC split-seed change does not alter it.
+
+For formal, isolated paper runs use the paper runner below. It masks NC Test
+labels during training, saves the Validation-selected checkpoint, then restores
+it in a separate process, checks Validation again, and evaluates Test once.
+The direct `src.main` entry point remains useful for ordinary experiments and
+can evaluate Test in the same process.
+
+## Formal paper benchmark
+
+The runner creates a separate directory for every dataset/task/model/config
+hash/training-seed cell. It records the resolved configuration, split hash,
+effective optimizer, checkpoint hash, source commit, Validation metrics, and
+single-use Test status. Existing runs are never overwritten; `--resume` only
+continues from `validation_complete`.
+
+```bash
+conda run -n yhf_env python scripts/run_paper_benchmark.py \
+  --dataset Movies --task nc --models mrage gcn --device cuda:0 \
+  --stage all --override model.hidden_dim=512 --override task.lr=1e-4
+
+conda run -n yhf_env python scripts/run_paper_benchmark.py \
+  --dataset sports-copurchase --task lp --models mrage gcn --seeds 42 43 44 \
+  --device cuda:0 --experiment-config experiments/my_lp.yaml --stage validation
+
+conda run -n yhf_env python scripts/collect_results.py --root outputs/paper
+```
+
+Use `--stage validation` to stop before Test or `--stage final-test --resume`
+to finish a saved Validation run. `--dry-run` prints the planned run paths.
+
+## Model parameters and optimizer precedence
+
+The formal MRAGE defaults are `hidden_dim=256`, four experts, and Top-2
+routing. Positive integer hidden dimensions such as 128, 256, and 512 are
+supported. The four-expert/Top-2 structure and the validated graph settings
+(`physical_hops=3`, `semantic_hops=1`, KNN K=8) remain fixed.
+
+The optimizer name comes from `task.optimizer`. For learning rate and weight
+decay, an explicit `model.lr` or `model.weight_decay` takes precedence over
+`task.lr` or `task.weight_decay` to preserve baseline presets. MRAGE has no
+model-level LR preset, so `task.lr=1e-4` changes its effective learning rate.
+The trainer logs the effective optimizer and every parameter group's LR/decay.
 
 ## Run sampled LP
 
@@ -75,6 +118,14 @@ source nodes uses the explicit `[1,1,1]` train-graph fanout approximation in
 `lgmrec` are NC-only and fail with a clear unsupported-task error for LP.
 For sampled LP, DGF's ten graph-filter terms request ten sampler fanouts; the
 last configured fanout is repeated when `task.num_neighbors` is shorter.
+
+LP Validation/Test ranking runs without Autograd and scores candidate edges in
+bounded batches, with pessimistic ties retained. Evaluation embeddings stay on
+GPU only when the free-memory check leaves a safety reserve; projection can be
+computed in chunks. The trainer no longer clears the CUDA allocator cache after
+every epoch. Optional phase timings are enabled with `task.profile_timing=true`;
+they synchronize CUDA only while profiling is enabled. Loader worker counts
+remain configurable and do not change negative sampling or fanout defaults.
 
 ## Semantic graph cache
 
@@ -97,7 +148,12 @@ semantic_graph.mode=rebuild    # rebuild this exact identity
 semantic_graph.cache_dir=/path/to/cache
 ```
 
-The frozen graph rule is validated only at `knn_k=8`.
+The formal graph rule is validated only at `knn_k=8`. Cache identity, source
+flags, propagation operators, and checkpoint validation retain their existing
+V7B.1 compatibility fingerprints.
+
+Independent Ablation and Analysis implementations are not included in this
+release; they remain planned follow-up work.
 
 ## Models
 

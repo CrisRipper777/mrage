@@ -16,7 +16,7 @@ from omegaconf import DictConfig, OmegaConf
 from src.data import load_mag_data
 from src.data.loaders import resolve_path
 from src.data.semantic_graph_manager import ensure_semantic_graph_cache
-from src.tasks import run_lp, run_nc
+from src.tasks import evaluate_lp_checkpoint, evaluate_nc_checkpoint, run_lp, run_nc
 from src.utils.device import get_device
 from src.utils.logging import setup_logger
 
@@ -78,6 +78,13 @@ def main(cfg: DictConfig) -> None:
     if str(cfg.model.name).lower() == "mrage":
         if data.x_t is None or data.x_i is None:
             raise ValueError("MRAGE requires separate Text and Visual feature matrices")
+        model_knn_k = int(cfg.model.get("semantic_knn_k", 8))
+        graph_knn_k = int(cfg.semantic_graph.knn_k)
+        if model_knn_k != graph_knn_k:
+            raise ValueError(
+                "model.semantic_knn_k and semantic_graph.knn_k must match; "
+                f"got {model_knn_k} and {graph_knn_k}"
+            )
         semantic_cache = ensure_semantic_graph_cache(
             dataset=str(data.name),
             task=str(cfg.task.name).lower(),
@@ -103,7 +110,17 @@ def main(cfg: DictConfig) -> None:
         )
     _log_data_info(logger, data, str(cfg.model.name))
 
-    if int(cfg.task.epochs) <= 0:
+    phase = str(cfg.task.get("phase", "train")).strip().lower()
+    if phase == "final_test":
+        if str(cfg.task.name) == "nc":
+            results = evaluate_nc_checkpoint(cfg, data, device, logger)
+        elif str(cfg.task.name) == "lp":
+            results = evaluate_lp_checkpoint(cfg, data, device, logger)
+        else:
+            raise ValueError(f"Unsupported task: {cfg.task.name}")
+    elif phase != "train":
+        raise ValueError("task.phase must be 'train' or 'final_test'")
+    elif int(cfg.task.epochs) <= 0:
         logger.info("task.epochs <= 0, stopping after data loading/split preparation")
         results = {}
     elif str(cfg.task.name) == "nc":
@@ -113,7 +130,11 @@ def main(cfg: DictConfig) -> None:
     else:
         raise ValueError(f"Unsupported task: {cfg.task.name}")
 
-    serializable = {key: {"mean": value[0], "std": value[1]} for key, value in results.items()}
+    serializable = {
+        key: ({"mean": value[0], "std": value[1]} if isinstance(value, (tuple, list))
+              else {"value": float(value)})
+        for key, value in results.items()
+    }
     with (output_dir / "results.json").open("w", encoding="utf-8") as f:
         json.dump(serializable, f, indent=2)
     logger.info("Saved results: %s", output_dir / "results.json")

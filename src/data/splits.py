@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections import defaultdict
 from pathlib import Path
 
@@ -8,6 +9,14 @@ import torch
 from sklearn.model_selection import train_test_split
 
 from .graph_utils import canonicalize_edges, ensure_edge_index
+
+
+def file_sha256(path: str | Path, chunk_size: int = 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        while chunk := handle.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def generate_nc_split(

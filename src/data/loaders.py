@@ -8,7 +8,7 @@ import torch
 from omegaconf import DictConfig
 
 from .graph_utils import edge_dict_to_index, ensure_edge_index, preprocess_edge_index
-from .splits import load_or_create_lp_split, load_or_create_nc_split
+from .splits import file_sha256, load_or_create_lp_split, load_or_create_nc_split
 from .types import EdgeSplit, MAGData
 
 
@@ -104,12 +104,14 @@ def _load_magb(cfg: DictConfig, task_name: str, seed: int) -> MAGData:
     x = torch.cat([text_feat, image_feat], dim=1).contiguous()
 
     if task_name == "nc":
+        split_seed = int(cfg.get("dataset_split_seed", 42))
+        split_path = resolve_path(ds.nc_split_path)
         split = load_or_create_nc_split(
-            resolve_path(ds.nc_split_path),
+            split_path,
             labels,
             float(ds.get("nc_train_ratio", 0.6)),
             float(ds.get("nc_val_ratio", 0.2)),
-            seed,
+            split_seed,
             bool(ds.get("auto_generate_splits", True)),
         )
         edge_index = preprocess_edge_index(
@@ -132,7 +134,11 @@ def _load_magb(cfg: DictConfig, task_name: str, seed: int) -> MAGData:
             test_idx=_as_index_tensor(split["test_idx"]),
             num_nodes=num_nodes,
             num_classes=int(ds.num_classes),
-            info={"nc_split_path": str(resolve_path(ds.nc_split_path))},
+            info={
+                "nc_split_path": str(split_path),
+                "nc_split_seed": split_seed,
+                "nc_split_sha256": file_sha256(split_path),
+            },
         )
 
     if task_name == "lp":
@@ -167,7 +173,10 @@ def _load_magb(cfg: DictConfig, task_name: str, seed: int) -> MAGData:
             edge_split=edge_split,
             num_nodes=num_nodes,
             num_classes=int(ds.num_classes),
-            info={"lp_split_path": str(resolve_path(ds.lp_split_path))},
+            info={
+                "lp_split_path": str(resolve_path(ds.lp_split_path)),
+                "lp_split_sha256": file_sha256(resolve_path(ds.lp_split_path)),
+            },
         )
 
     raise ValueError(f"Unsupported MAGB task: {task_name}")
@@ -211,7 +220,11 @@ def _load_mmgraph(cfg: DictConfig, task_name: str) -> MAGData:
             test_idx=_as_index_tensor(split["test_idx"]),
             num_nodes=num_nodes,
             num_classes=int(ds.num_classes),
-            info={"node_split_path": str(resolve_path(ds.node_split_path))},
+            info={
+                "node_split_path": str(resolve_path(ds.node_split_path)),
+                "node_split_sha256": file_sha256(resolve_path(ds.node_split_path)),
+                "official_fixed_split": True,
+            },
         )
 
     if task_name == "lp":
@@ -235,7 +248,11 @@ def _load_mmgraph(cfg: DictConfig, task_name: str) -> MAGData:
             edge_split=edge_split,
             num_nodes=num_nodes,
             num_classes=None,
-            info={"edge_split_path": str(resolve_path(ds.edge_split_path))},
+            info={
+                "edge_split_path": str(resolve_path(ds.edge_split_path)),
+                "edge_split_sha256": file_sha256(resolve_path(ds.edge_split_path)),
+                "official_fixed_split": True,
+            },
         )
 
     raise ValueError(f"Unsupported MM-Graph task: {task_name}")

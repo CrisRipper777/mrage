@@ -30,6 +30,13 @@ loss:
   class_balanced_main_ce: false
 
 evaluate_test: true
+macro_f1_labels: all_classes
+phase: train # train | final_test (paper benchmark runner)
+mask_test_labels: false
+checkpoint_path: null
+validation_metrics_path: null
+final_test_metrics_path: null
+paper_run_status_path: null
 
 # Optional physical graph override for isolated topology controls.
 edge_index_override_path: null

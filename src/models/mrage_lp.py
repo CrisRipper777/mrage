@@ -1,4 +1,4 @@
-"""LinkNeighborLoader adapter for the frozen MR-CGE Final encoder.
+"""LinkNeighborLoader adapter for the formal MRAGE encoder.
 
 The target nodes keep every cached V7B.1 semantic candidate. The Late
 Completion source nodes are added with their full semantic neighborhoods as

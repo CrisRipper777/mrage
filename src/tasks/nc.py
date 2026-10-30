@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
+import math
 from pathlib import Path
 
 import torch
@@ -11,9 +13,10 @@ from torch.utils.data import DataLoader as TorchDataLoader
 
 from src.data import MAGData
 from src.models import build_model
-from src.tasks.common import build_optimizer, clone_state_dict, load_state_dict_cpu, scheduler_step
+from src.tasks.common import build_optimizer, clone_state_dict, load_state_dict_cpu, log_optimizer, scheduler_step
 from src.tasks.inference import infer_all_embeddings, resolve_inference_mode
 from src.utils.metrics import format_pct
+from src.utils.run_artifacts import write_json_atomic
 from src.utils.seeds import set_seed
 from src.utils.summary import count_parameters, mean_std
 
@@ -92,7 +95,6 @@ def _training_class_weights(
 def _resolve_nc_eval_labels(
     data: MAGData,
     *,
-    include_test: bool = True,
     fixed_labels: list[int] | tuple[int, ...] | str | None = None,
 ) -> list[int]:
     if data.y is None or data.num_classes is None:
@@ -107,18 +109,9 @@ def _resolve_nc_eval_labels(
         if not labels or labels[0] < 0 or labels[-1] >= int(data.num_classes):
             raise ValueError("task.macro_f1_labels must contain valid configured class IDs")
         return labels
-    split_indices = [idx for idx in (data.train_idx, data.val_idx) if idx is not None]
-    if include_test and data.test_idx is not None:
-        split_indices.append(data.test_idx)
-    if not split_indices:
-        raise ValueError("NC data must contain at least one supervised split")
-    indices = torch.cat([idx.reshape(-1) for idx in split_indices]).to(data.y.device)
-    observed = data.y[indices].detach().cpu()
-    valid = observed[(observed >= 0) & (observed < int(data.num_classes))]
-    labels = sorted({int(value) for value in valid.tolist()})
-    if not labels:
-        raise ValueError("NC supervised splits contain no valid class labels")
-    return labels
+    # The paper protocol scores all configured classes. This set is fixed by
+    # the dataset schema and never inferred from any split's observed labels.
+    return list(range(int(data.num_classes)))
 
 
 @torch.no_grad()
@@ -193,6 +186,7 @@ def _run_single_nc(
     model = model.to(device)
     classifier = nn.Linear(model.out_dim, int(data.num_classes)).to(device)
     optimizer = build_optimizer(list(model.parameters()) + list(classifier.parameters()), cfg, model=model)
+    effective_optimizer = log_optimizer(logger, optimizer)
     training_mode = _resolve_training_mode(cfg)
     uses_graph = _uses_graph_encoder(cfg)
     full_graph_training = training_mode == "full_graph"
@@ -341,7 +335,11 @@ def _run_single_nc(
         "model_parameters": count_parameters(model),
         "classifier_parameters": count_parameters(classifier),
         "optimizer": type(optimizer).__name__,
+        "effective_optimizer": effective_optimizer,
         "protocol_version": str(cfg.task.get("protocol_version", "")),
+        "split_path": data.info.get("nc_split_path", data.info.get("node_split_path")),
+        "split_sha256": data.info.get("nc_split_sha256", data.info.get("node_split_sha256")),
+        "split_seed": data.info.get("nc_split_seed"),
     }
     for name in (
         "semantic_candidate_fingerprint", "semantic_feature_fingerprint",
@@ -357,6 +355,8 @@ def _run_single_nc(
         torch.save(
             {
                 "task": "nc",
+                "dataset": str(cfg.dataset.name),
+                "model": str(cfg.model.name),
                 "protocol_version": str(cfg.task.get("protocol_version", "")),
                 "seed": seed,
                 "selection": "best_val_accuracy",
@@ -394,9 +394,15 @@ def run_nc(
     if data.y is None or data.train_idx is None or data.val_idx is None or data.test_idx is None:
         raise ValueError("NC data must contain y/train_idx/val_idx/test_idx")
     _resolve_training_mode(cfg)
+    evaluate_test = bool(cfg.task.get("evaluate_test", True))
+    if bool(cfg.task.get("mask_test_labels", False)):
+        if evaluate_test:
+            raise ValueError("task.mask_test_labels requires task.evaluate_test=false")
+        data = copy.copy(data)
+        data.y = data.y.clone()
+        data.y[data.test_idx] = -100
     eval_labels = _resolve_nc_eval_labels(
         data,
-        include_test=bool(cfg.task.get("evaluate_test", True)),
         fixed_labels=cfg.task.get("macro_f1_labels"),
     )
     run_results = []
@@ -447,3 +453,147 @@ def run_nc(
         logger.info("%s: %.2f ± %.2f", names[key], format_pct(mean), format_pct(std))
     logger.info("============================================================")
     return output
+
+
+def evaluate_nc_checkpoint(
+    cfg,
+    data: MAGData,
+    device: torch.device,
+    logger: logging.Logger,
+) -> dict[str, float]:
+    """Recompute Validation, then evaluate Test exactly once from a saved run."""
+    checkpoint_path = Path(str(cfg.task.checkpoint_path)).expanduser()
+    validation_path = Path(str(cfg.task.validation_metrics_path)).expanduser()
+    final_path = Path(str(cfg.task.final_test_metrics_path)).expanduser()
+    status_path = Path(str(cfg.task.paper_run_status_path)).expanduser()
+    if final_path.exists():
+        raise FileExistsError(f"Final-test results already exist: {final_path}")
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+    if int(status.get("test_evaluation_count", 0)) != 0:
+        raise RuntimeError("Test evaluation has already been completed for this run")
+    if status.get("status") not in {"validation_complete", "final_test_running"}:
+        raise RuntimeError(f"run is not ready for final Test evaluation: {status.get('status')}")
+
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    if checkpoint.get("task") != "nc":
+        raise ValueError("checkpoint task is not NC")
+    if checkpoint.get("dataset") != str(cfg.dataset.name) or checkpoint.get("model") != str(cfg.model.name):
+        raise ValueError("checkpoint dataset/model identity differs from the requested run")
+    if int(checkpoint.get("seed", -1)) != int(cfg.seed):
+        raise ValueError("checkpoint training seed differs from the requested run")
+    if checkpoint.get("protocol_version") != str(cfg.task.protocol_version):
+        raise ValueError("checkpoint protocol version differs from the current config")
+    run_metadata = checkpoint.get("run_metadata", {})
+    current_split_hash = data.info.get("nc_split_sha256", data.info.get("node_split_sha256"))
+    if not current_split_hash or run_metadata.get("split_sha256") != current_split_hash:
+        raise ValueError("checkpoint NC split fingerprint differs from the loaded split")
+    current_split_seed = data.info.get("nc_split_seed")
+    if current_split_seed is not None and int(run_metadata.get("split_seed", -1)) != int(current_split_seed):
+        raise ValueError("checkpoint NC split seed differs from the loaded split")
+
+    data_info = {
+        "input_dim": data.input_dim,
+        "num_nodes": data.num_nodes,
+        "num_classes": data.num_classes,
+        "text_dim": int(data.x_t.shape[1]) if data.x_t is not None else 0,
+        "visual_dim": int(data.x_i.shape[1]) if data.x_i is not None else 0,
+    }
+    if checkpoint.get("data_info") != data_info:
+        raise ValueError("checkpoint data dimensions differ from the loaded NC dataset")
+    model = build_model(cfg, data_info)
+    if bool(getattr(model, "requires_global_semantic_candidates", False)):
+        cache_path = cfg.semantic_graph.get("resolved_cache_path")
+        if not cache_path:
+            raise ValueError("MRAGE NC final evaluation requires a validated semantic cache")
+        model.load_semantic_cache(
+            str(cache_path),
+            expected_dataset=str(cfg.dataset.name),
+            expected_feature_fingerprint=cfg.semantic_graph.get("feature_fingerprint"),
+            expected_candidate_fingerprint=cfg.semantic_graph.get("candidate_fingerprint"),
+            expected_v7b_fingerprint=cfg.semantic_graph.get("v7b_fingerprint"),
+            expected_identity_fingerprint=cfg.semantic_graph.get("identity_fingerprint"),
+        )
+        for key in (
+            "semantic_candidate_fingerprint", "semantic_feature_fingerprint",
+            "semantic_graph_identity_fingerprint", "semantic_v7b_fingerprint",
+        ):
+            saved = run_metadata.get(key)
+            current = getattr(model, key, None)
+            if saved is not None and saved != current:
+                raise ValueError(f"checkpoint semantic graph identity differs for {key}")
+    model = model.to(device)
+    classifier = nn.Linear(model.out_dim, int(data.num_classes)).to(device)
+    load_state_dict_cpu(model, checkpoint["model_state"])
+    load_state_dict_cpu(classifier, checkpoint["head_state"])
+
+    eval_labels = _resolve_nc_eval_labels(
+        data, fixed_labels=cfg.task.get("macro_f1_labels", "all_classes")
+    )
+    z = infer_all_embeddings(
+        model,
+        data,
+        device,
+        _uses_graph_encoder(cfg),
+        int(cfg.task.inference_batch_size),
+        resolve_inference_mode(cfg),
+    )
+    validation_raw = _evaluate_split(
+        classifier, z, data.y, data.val_idx, device,
+        int(cfg.task.inference_batch_size), eval_labels,
+    )
+    validation = {
+        "val_acc": validation_raw["acc"],
+        "val_macro_f1": validation_raw["macro_f1"],
+    }
+    saved_metrics = checkpoint.get("metrics", {})
+    expected_validation = json.loads(validation_path.read_text(encoding="utf-8"))
+    for metric in ("val_acc", "val_macro_f1"):
+        expected = float(saved_metrics[metric])
+        if metric in expected_validation.get("metrics", {}):
+            if not math.isclose(
+                expected, float(expected_validation["metrics"][metric]), rel_tol=0.0, abs_tol=1e-12
+            ):
+                raise ValueError(f"saved validation record disagrees with checkpoint for {metric}")
+        if not math.isclose(expected, validation[metric], rel_tol=0.0, abs_tol=1e-12):
+            raise ValueError(
+                f"recomputed Validation {metric}={validation[metric]} differs from checkpoint {expected}"
+            )
+
+    z = infer_all_embeddings(
+        model,
+        data,
+        device,
+        _uses_graph_encoder(cfg),
+        int(cfg.task.inference_batch_size),
+        resolve_inference_mode(cfg),
+    )
+    test_raw = _evaluate_split(
+        classifier, z, data.y, data.test_idx, device,
+        int(cfg.task.inference_batch_size), eval_labels,
+    )
+    test = {
+        "test_acc": test_raw["acc"],
+        "test_macro_f1": test_raw["macro_f1"],
+    }
+    metrics = {**validation, **test}
+    payload = {
+        "dataset": str(cfg.dataset.name),
+        "task": "nc",
+        "model": str(cfg.model.name),
+        "seed": int(cfg.seed),
+        "split_id": current_split_hash,
+        "protocol_version": str(cfg.task.protocol_version),
+        "best_epoch": int(checkpoint["epoch"]),
+        "selection_metric": "val_acc",
+        "metrics": metrics,
+        "test_evaluation_count": 1,
+    }
+    write_json_atomic(final_path, payload)
+    status.update(
+        status="final_test_complete",
+        test_evaluation_count=1,
+        final_test_metrics_path=str(final_path),
+    )
+    write_json_atomic(status_path, status)
+    logger.info("Final Test metrics: %s", metrics)
+    return metrics

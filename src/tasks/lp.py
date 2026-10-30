@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
+import json
 import logging
+import math
 from pathlib import Path
 import random
 
@@ -23,13 +25,16 @@ from src.tasks.common import (
     build_optimizer,
     clone_state_dict,
     load_state_dict_cpu,
+    log_optimizer,
     resolve_num_neighbors,
     scheduler_step,
 )
 from src.tasks.inference import infer_all_embeddings, resolve_inference_mode
 from src.utils.metrics import format_pct
+from src.utils.run_artifacts import write_json_atomic
 from src.utils.seeds import set_seed
 from src.utils.summary import count_parameters, mean_std
+from src.utils.timing import PhaseProfiler
 
 
 def _uses_graph_encoder(cfg) -> bool:
@@ -375,14 +380,54 @@ def _raise_if_nonfinite(value: torch.Tensor, label: str) -> None:
 def _prepare_eval_embeddings(
     z: torch.Tensor, device: torch.device, preload: bool, logger: logging.Logger
 ) -> torch.Tensor:
-    z_eval = z.to(device, non_blocking=True) if preload else z
+    use_device = bool(preload)
+    if use_device and device.type == "cuda" and z.device != device:
+        required = z.numel() * z.element_size()
+        free_bytes, total_bytes = torch.cuda.mem_get_info(device)
+        reserve = max(512 * 1024**2, int(total_bytes * 0.1))
+        if required > max(0, free_bytes - reserve):
+            use_device = False
+            logger.warning(
+                "Keeping LP evaluation embeddings on CPU: need %.2f GiB, safe free memory %.2f GiB",
+                required / 1024**3,
+                max(0, free_bytes - reserve) / 1024**3,
+            )
+    z_eval = z.to(device, non_blocking=True) if use_device and z.device != device else z
     logger.info(
         "Eval node embeddings: preload=%s | device=%s | shape=%s",
-        preload,
+        use_device,
         z_eval.device,
         tuple(z_eval.shape),
     )
     return z_eval
+
+
+@torch.no_grad()
+def _project_eval_embeddings(
+    z: torch.Tensor,
+    projection: nn.Module,
+    device: torch.device,
+    *,
+    preload: bool,
+    batch_size: int,
+) -> torch.Tensor:
+    """Project CPU inference output in chunks and retain it on GPU only if safe."""
+    projection.eval()
+    output_dim = int(projection.out_features)
+    use_device = bool(preload and device.type == "cuda")
+    if use_device:
+        required = int(z.size(0)) * output_dim * z.element_size()
+        free_bytes, total_bytes = torch.cuda.mem_get_info(device)
+        reserve = max(512 * 1024**2, int(total_bytes * 0.1))
+        use_device = required <= max(0, free_bytes - reserve)
+    destination = torch.device(device) if use_device else torch.device("cpu")
+    projected = torch.empty((z.size(0), output_dim), dtype=z.dtype, device=destination)
+    for start in range(0, int(z.size(0)), int(batch_size)):
+        end = min(start + int(batch_size), int(z.size(0)))
+        batch = z[start:end].to(device, non_blocking=True)
+        value = projection(batch)
+        projected[start:end] = value.to(destination)
+    return projected
 
 
 @torch.no_grad()
@@ -398,7 +443,7 @@ def _evaluate_split(
     dst_all = split["target_node"]
     neg_all = split["target_node_neg"]
     total = int(src_all.numel())
-    mrr_sum = hits1_sum = hits3_sum = hits10_sum = 0.0
+    metric_sums = torch.zeros(4, dtype=torch.float64, device=device)
 
     for start in range(0, total, batch_size):
         end = min(start + batch_size, total)
@@ -415,12 +460,17 @@ def _evaluate_split(
         _raise_if_nonfinite(neg_score, "LP evaluation negative scores")
         # V3 uses pessimistic ties: an equal-scoring negative ranks before positive.
         ranks = 1.0 + (neg_score >= pos_score.view(-1, 1)).sum(dim=1).float()
-        mrr_sum += float((1.0 / ranks).sum().item())
-        hits1_sum += float((ranks <= 1).float().sum().item())
-        hits3_sum += float((ranks <= 3).float().sum().item())
-        hits10_sum += float((ranks <= 10).float().sum().item())
+        metric_sums += torch.stack(
+            (
+                (1.0 / ranks).sum(),
+                (ranks <= 1).float().sum(),
+                (ranks <= 3).float().sum(),
+                (ranks <= 10).float().sum(),
+            )
+        ).to(device=device, dtype=torch.float64)
 
     denom = max(total, 1)
+    mrr_sum, hits1_sum, hits3_sum, hits10_sum = metric_sums.cpu().tolist()
     return {
         "mrr": mrr_sum / denom,
         "hits@1": hits1_sum / denom,
@@ -499,6 +549,7 @@ def _run_single_lp(
     if projection is not None:
         optimizer_parameters += list(projection.parameters())
     optimizer = build_optimizer(optimizer_parameters, cfg, model=model)
+    effective_optimizer = log_optimizer(logger, optimizer)
     criterion = nn.BCEWithLogitsLoss()
     uses_graph = _uses_graph_encoder(cfg)
     _resolve_lp_training_mode(cfg)
@@ -561,18 +612,33 @@ def _run_single_lp(
     max_train_batches = cfg.task.get("max_train_batches")
     inference_batch_size = int(cfg.task.inference_batch_size)
     eval_preload = bool(cfg.task.get("eval_preload_node_emb", False))
+    profile = PhaseProfiler(bool(cfg.task.get("profile_timing", False)), device)
+    profile_epoch_records: list[dict[str, float]] = []
     eval_every = int(cfg.task.eval_every)
     if eval_every < 1:
         raise ValueError("task.eval_every must be >= 1")
 
+    def finish_profile_epoch(epoch_id: int) -> None:
+        if not profile.enabled:
+            return
+        total_seconds = profile.finish_epoch()
+        profile_epoch_records.append(dict(profile.seconds))
+        logger.info(
+            "[LP timing] Epoch %05d | total=%.4fs | %s",
+            epoch_id,
+            total_seconds,
+            profile.format_epoch(),
+        )
+
     for epoch in range(1, int(cfg.task.epochs) + 1):
+        profile.start_epoch()
         model.train()
         predictor.train()
         if projection is not None:
             projection.train()
         if hasattr(model, "set_epoch"):
             model.set_epoch(epoch)
-        total_loss = 0.0
+        total_loss_sum = torch.zeros((), dtype=torch.float64, device=device)
         total_examples = 0
         removed_edges = 0
         neg_seed, shuffle_seed, neighbor_seed = _epoch_random_seeds(
@@ -580,90 +646,103 @@ def _run_single_lp(
         )
         neg_generator = torch.Generator().manual_seed(neg_seed)
         batch_generator = torch.Generator().manual_seed(shuffle_seed)
-        edge_label_index, edge_label = _build_epoch_train_labels(
-            train_pos,
-            data.num_nodes,
-            int(cfg.task.num_train_neg),
-            forbidden_keys,
-            neg_generator,
-            train_pos_per_epoch=train_pos_per_epoch,
-        )
-        if uses_graph:
-            loader = _build_link_loader(
-                cfg,
-                pyg_data,
-                edge_label_index,
-                edge_label,
-                batch_generator,
-                neighbor_seed,
-                model=model,
+        with profile.measure("negative_sampling"):
+            edge_label_index, edge_label = _build_epoch_train_labels(
+                train_pos,
+                data.num_nodes,
+                int(cfg.task.num_train_neg),
+                forbidden_keys,
+                neg_generator,
+                train_pos_per_epoch=train_pos_per_epoch,
             )
-        else:
-            loader = _build_edge_loader(
-                cfg, edge_label_index, edge_label, batch_generator
-            )
+        with profile.measure("link_neighbor_loader_construction"):
+            if uses_graph:
+                loader = _build_link_loader(
+                    cfg,
+                    pyg_data,
+                    edge_label_index,
+                    edge_label,
+                    batch_generator,
+                    neighbor_seed,
+                    model=model,
+                )
+            else:
+                loader = _build_edge_loader(
+                    cfg, edge_label_index, edge_label, batch_generator
+                )
+            loader_iterator = iter(loader)
 
-        for step, batch in enumerate(loader):
-            if max_train_batches is not None and step >= int(max_train_batches):
-                break
+        step = 0
+        while max_train_batches is None or step < int(max_train_batches):
+            with profile.measure("batch_fetch_neighbor_sampling"):
+                try:
+                    batch = next(loader_iterator)
+                except StopIteration:
+                    break
             optimizer.zero_grad(set_to_none=True)
             if uses_graph:
-                if message_lookup is not None:
-                    removed_edges += _exclude_positive_label_edges_by_global_eid(
-                        batch, message_lookup
-                    )
-                else:
-                    old_edge_count = int(batch.edge_index.size(1))
-                    batch.edge_index = _exclude_positive_label_edges_from_message_graph(
-                        batch.edge_index,
-                        batch.edge_label_index,
-                        batch.edge_label,
-                        num_nodes=int(batch.x.size(0)),
-                    )
-                    removed_edges += old_edge_count - int(batch.edge_index.size(1))
-                if hasattr(model, "prepare_sampled_lp_batch"):
-                    model.prepare_sampled_lp_batch(
-                        batch,
-                        sample_seed=neighbor_seed + int(step),
-                    )
+                with profile.measure("positive_edge_masking"):
+                    if message_lookup is not None:
+                        removed_edges += _exclude_positive_label_edges_by_global_eid(
+                            batch, message_lookup
+                        )
+                    else:
+                        old_edge_count = int(batch.edge_index.size(1))
+                        batch.edge_index = _exclude_positive_label_edges_from_message_graph(
+                            batch.edge_index,
+                            batch.edge_label_index,
+                            batch.edge_label,
+                            num_nodes=int(batch.x.size(0)),
+                        )
+                        removed_edges += old_edge_count - int(batch.edge_index.size(1))
+                with profile.measure("semantic_context_preparation"):
+                    if hasattr(model, "prepare_sampled_lp_batch"):
+                        model.prepare_sampled_lp_batch(
+                            batch,
+                            sample_seed=neighbor_seed + int(step),
+                        )
                 batch = batch.to(device)
                 if hasattr(model, "_batch_n_id"):
                     model._batch_n_id = batch.n_id
-                z, _, _, aux_loss, _ = model(batch.x, batch.edge_index)
-                if projection is not None:
-                    z = projection(z)
-                src, dst = batch.edge_label_index
-                logits = predictor.score_pairs(z[src], z[dst])
-                labels = batch.edge_label.float()
+                with profile.measure("forward"):
+                    z, _, _, aux_loss, _ = model(batch.x, batch.edge_index)
+                    if projection is not None:
+                        z = projection(z)
+                    src, dst = batch.edge_label_index
+                    logits = predictor.score_pairs(z[src], z[dst])
+                    labels = batch.edge_label.float()
             else:
                 edges, labels = batch
                 edges = edges.to(device)
                 labels = labels.to(device)
-                z_all, _, _, aux_loss, _ = model(x_all[edges.reshape(-1)], None)
-                if projection is not None:
-                    z_all = projection(z_all)
-                z_pairs = z_all.view(edges.size(0), 2, -1)
-                logits = predictor.score_pairs(z_pairs[:, 0], z_pairs[:, 1])
+                with profile.measure("forward"):
+                    z_all, _, _, aux_loss, _ = model(x_all[edges.reshape(-1)], None)
+                    if projection is not None:
+                        z_all = projection(z_all)
+                    z_pairs = z_all.view(edges.size(0), 2, -1)
+                    logits = predictor.score_pairs(z_pairs[:, 0], z_pairs[:, 1])
 
             _raise_if_nonfinite(logits, f"LP logits at epoch {epoch} batch {step}")
             loss = criterion(logits, labels) + aux_weight * aux_loss
             _raise_if_nonfinite(loss, f"LP loss at epoch {epoch} batch {step}")
-            loss.backward()
-            clip_parameters = list(model.parameters()) + list(predictor.parameters())
-            if projection is not None:
-                clip_parameters += list(projection.parameters())
-            torch.nn.utils.clip_grad_norm_(
-                clip_parameters, max_norm=grad_clip, error_if_nonfinite=True
-            )
-            optimizer.step()
-            total_loss += float(loss.detach().item()) * int(labels.numel())
+            with profile.measure("backward_optimizer_step"):
+                loss.backward()
+                clip_parameters = list(model.parameters()) + list(predictor.parameters())
+                if projection is not None:
+                    clip_parameters += list(projection.parameters())
+                torch.nn.utils.clip_grad_norm_(
+                    clip_parameters, max_norm=grad_clip, error_if_nonfinite=True
+                )
+                optimizer.step()
+            total_loss_sum += loss.detach().to(torch.float64) * int(labels.numel())
             total_examples += int(labels.numel())
             if hasattr(model, "clear_sampled_lp_context"):
                 model.clear_sampled_lp_context()
             elif hasattr(model, "_batch_n_id"):
                 model._batch_n_id = None
+            step += 1
 
-        train_loss = total_loss / max(total_examples, 1)
+        train_loss = float((total_loss_sum / max(total_examples, 1)).item())
         scheduler_step(cfg, optimizer, epoch, int(cfg.task.epochs))
         if epoch % eval_every != 0:
             logger.info(
@@ -672,22 +751,28 @@ def _run_single_lp(
                 train_loss,
                 removed_edges,
             )
+            finish_profile_epoch(epoch)
             continue
 
-        z = infer_all_embeddings(
-            model, data, device, uses_graph, inference_batch_size, inference_mode
-        )
-        if projection is not None:
-            projection.eval()
-            z = projection(z.to(device)).detach().cpu()
-        z_eval = _prepare_eval_embeddings(z, device, eval_preload, logger)
-        val_metrics = _evaluate_split(
-            z_eval,
-            predictor,
-            data.edge_split.valid,
-            device,
-            int(cfg.task.eval_edge_batch_size),
-        )
+        with profile.measure("full_graph_validation_encoding"):
+            z = infer_all_embeddings(
+                model, data, device, uses_graph, inference_batch_size, inference_mode
+            )
+            if projection is not None:
+                z = _project_eval_embeddings(
+                    z, projection, device, preload=eval_preload,
+                    batch_size=inference_batch_size,
+                )
+        with profile.measure("evaluation_embedding_transfer"):
+            z_eval = _prepare_eval_embeddings(z, device, eval_preload, logger)
+        with profile.measure("validation_link_scoring"):
+            val_metrics = _evaluate_split(
+                z_eval,
+                predictor,
+                data.edge_split.valid,
+                device,
+                int(cfg.task.eval_edge_batch_size),
+            )
         logger.info(
             "Epoch %05d | Train Loss %.4f | Positive Message Edges Removed %d | "
             "Val MRR %.2f | H@1 %.2f | H@3 %.2f | H@10 %.2f",
@@ -705,12 +790,16 @@ def _run_single_lp(
         if improved:
             best_val = val_metrics["mrr"]
             best_epoch = epoch
-            best_metrics = {"val_mrr": val_metrics["mrr"]}
-            best_model_state = clone_state_dict(model)
-            best_predictor_state = clone_state_dict(predictor)
-            best_projection_state = (
-                clone_state_dict(projection) if projection is not None else None
-            )
+            best_metrics = {
+                f"val_{name}": value
+                for name, value in val_metrics.items()
+            }
+            with profile.measure("best_checkpoint_snapshot"):
+                best_model_state = clone_state_dict(model)
+                best_predictor_state = clone_state_dict(predictor)
+                best_projection_state = (
+                    clone_state_dict(projection) if projection is not None else None
+                )
             patience_left = patience_total
         elif epoch >= min_epoch:
             patience_left -= 1
@@ -723,8 +812,7 @@ def _run_single_lp(
             stop_early = patience_left <= 0
         del z_eval
         del z
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        finish_profile_epoch(epoch)
         if stop_early:
             logger.info("Early stopping at epoch %03d", epoch)
             break
@@ -739,13 +827,36 @@ def _run_single_lp(
     if projection is not None and best_projection_state is not None:
         load_state_dict_cpu(projection, best_projection_state)
 
+    run_metadata = {
+        "best_epoch": int(best_epoch),
+        "model_parameters": count_parameters(model),
+        "predictor_parameters": count_parameters(predictor),
+        "projection_parameters": count_parameters(projection) if projection is not None else 0,
+        "optimizer": type(optimizer).__name__,
+        "effective_optimizer": effective_optimizer,
+        "protocol_version": str(cfg.task.get("protocol_version", "")),
+        "split_path": data.info.get("lp_split_path", data.info.get("edge_split_path")),
+        "split_sha256": data.info.get("lp_split_sha256", data.info.get("edge_split_sha256")),
+        "profile_timing_enabled": profile.enabled,
+        "profile_epoch_seconds": profile_epoch_records,
+    }
+    for name in (
+        "semantic_candidate_fingerprint", "semantic_feature_fingerprint",
+        "semantic_graph_identity_fingerprint", "semantic_v7b_fingerprint",
+    ):
+        value = getattr(model, name, None)
+        if value is not None:
+            run_metadata[name] = value
+
     if bool(cfg.task.get("evaluate_test", True)):
         z = infer_all_embeddings(
             model, data, device, uses_graph, inference_batch_size, inference_mode
         )
         if projection is not None:
-            projection.eval()
-            z = projection(z.to(device)).detach().cpu()
+            z = _project_eval_embeddings(
+                z, projection, device, preload=eval_preload,
+                batch_size=inference_batch_size,
+            )
         z_eval = _prepare_eval_embeddings(z, device, eval_preload, logger)
         test_metrics = _evaluate_split(
             z_eval,
@@ -771,11 +882,14 @@ def _run_single_lp(
         torch.save(
             {
                 "task": "lp",
+                "dataset": str(cfg.dataset.name),
+                "model": str(cfg.model.name),
                 "protocol_version": str(cfg.task.protocol_version),
                 "seed": seed,
                 "selection": "best_val_mrr",
                 "epoch": best_epoch,
                 "metrics": dict(best_metrics),
+                "run_metadata": run_metadata,
                 "model_state": clone_state_dict(model),
                 "head_state": clone_state_dict(predictor),
                 "proj_state": (
@@ -841,3 +955,167 @@ def run_lp(
         logger.info("%s: %.2f ± %.2f", names[key], format_pct(mean), format_pct(std))
     logger.info("============================================================")
     return output
+
+
+def evaluate_lp_checkpoint(
+    cfg,
+    data: MAGData,
+    device: torch.device,
+    logger: logging.Logger,
+) -> dict[str, float]:
+    """Recompute Validation MRR, then evaluate fixed Test candidates once."""
+    checkpoint_path = Path(str(cfg.task.checkpoint_path)).expanduser()
+    validation_path = Path(str(cfg.task.validation_metrics_path)).expanduser()
+    final_path = Path(str(cfg.task.final_test_metrics_path)).expanduser()
+    status_path = Path(str(cfg.task.paper_run_status_path)).expanduser()
+    if final_path.exists():
+        raise FileExistsError(f"Final-test results already exist: {final_path}")
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+    if int(status.get("test_evaluation_count", 0)) != 0:
+        raise RuntimeError("Test evaluation has already been completed for this run")
+    if status.get("status") not in {"validation_complete", "final_test_running"}:
+        raise RuntimeError(f"run is not ready for final Test evaluation: {status.get('status')}")
+    if data.edge_split is None:
+        raise ValueError("LP final evaluation requires fixed edge candidates")
+    if int(data.edge_split.test["source_node"].numel()) == 0:
+        raise ValueError("LP final evaluation has no Test candidates")
+
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    if checkpoint.get("task") != "lp":
+        raise ValueError("checkpoint task is not LP")
+    if checkpoint.get("dataset") != str(cfg.dataset.name) or checkpoint.get("model") != str(cfg.model.name):
+        raise ValueError("checkpoint dataset/model identity differs from the requested run")
+    if int(checkpoint.get("seed", -1)) != int(cfg.seed):
+        raise ValueError("checkpoint training seed differs from the requested run")
+    if checkpoint.get("protocol_version") != str(cfg.task.protocol_version):
+        raise ValueError("checkpoint protocol version differs from the current config")
+    if checkpoint.get("selection") != "best_val_mrr":
+        raise ValueError("checkpoint was not selected by Validation MRR")
+    run_metadata = checkpoint.get("run_metadata", {})
+    current_split_hash = data.info.get("lp_split_sha256", data.info.get("edge_split_sha256"))
+    if not current_split_hash:
+        raise ValueError("loaded LP data has no split fingerprint")
+    if run_metadata.get("split_sha256") != current_split_hash:
+        raise ValueError("checkpoint LP split fingerprint differs from the loaded split")
+    data_info = {
+        "input_dim": data.input_dim,
+        "num_nodes": data.num_nodes,
+        "num_classes": data.num_classes,
+        "text_dim": int(data.x_t.shape[1]) if data.x_t is not None else 0,
+        "visual_dim": int(data.x_i.shape[1]) if data.x_i is not None else 0,
+    }
+    if checkpoint.get("data_info") != data_info:
+        raise ValueError("checkpoint data dimensions differ from the loaded LP dataset")
+
+    model = build_model(cfg, data_info)
+    if (
+        getattr(model, "supports_link_prediction", True) is False
+        or bool(getattr(model, "requires_global_semantic_candidates", False))
+    ):
+        raise NotImplementedError(f"model={cfg.model.name} does not support sampled LP")
+    if bool(getattr(model, "requires_v7b_semantic_cache", False)):
+        cache_path = cfg.semantic_graph.get("resolved_cache_path")
+        if not cache_path:
+            raise ValueError("MRAGE LP final evaluation requires a validated semantic cache")
+        model.load_semantic_cache(
+            str(cache_path),
+            expected_dataset=str(cfg.dataset.name),
+            expected_feature_fingerprint=cfg.semantic_graph.get("feature_fingerprint"),
+            expected_candidate_fingerprint=cfg.semantic_graph.get("candidate_fingerprint"),
+            expected_v7b_fingerprint=cfg.semantic_graph.get("v7b_fingerprint"),
+            expected_identity_fingerprint=cfg.semantic_graph.get("identity_fingerprint"),
+        )
+        for key in (
+            "semantic_candidate_fingerprint", "semantic_feature_fingerprint",
+            "semantic_graph_identity_fingerprint", "semantic_v7b_fingerprint",
+        ):
+            saved = run_metadata.get(key)
+            current = getattr(model, key, None)
+            if saved is not None and saved != current:
+                raise ValueError(f"checkpoint semantic graph identity differs for {key}")
+    model = model.to(device)
+    if hasattr(model, "bind_lp_graph"):
+        model.bind_lp_graph(data.x, data.edge_index)
+    proj_dim = int(cfg.task.decoder.get("proj_dim", 0) or 0)
+    projection = nn.Linear(model.out_dim, proj_dim).to(device) if proj_dim > 0 else None
+    predictor = LinkPredictor(
+        in_dim=proj_dim if projection is not None else model.out_dim,
+        hidden_dim=int(cfg.task.decoder.hidden_dim),
+        num_layers=int(cfg.task.decoder.num_layers),
+        dropout=float(cfg.task.decoder.dropout),
+    ).to(device)
+    load_state_dict_cpu(model, checkpoint["model_state"])
+    load_state_dict_cpu(predictor, checkpoint["head_state"])
+    if projection is not None:
+        if checkpoint.get("proj_state") is None:
+            raise ValueError("LP checkpoint is missing its configured projection state")
+        load_state_dict_cpu(projection, checkpoint["proj_state"])
+    elif checkpoint.get("proj_state") is not None:
+        raise ValueError("LP checkpoint has a projection but the current config does not")
+
+    uses_graph = _uses_graph_encoder(cfg)
+    inference_mode = resolve_inference_mode(cfg)
+    z = infer_all_embeddings(
+        model, data, device, uses_graph, int(cfg.task.inference_batch_size), inference_mode
+    )
+    if projection is not None:
+        z = _project_eval_embeddings(
+            z, projection, device,
+            preload=bool(cfg.task.get("eval_preload_node_emb", False)),
+            batch_size=int(cfg.task.inference_batch_size),
+        )
+    z_eval = _prepare_eval_embeddings(
+        z, device, bool(cfg.task.get("eval_preload_node_emb", False)), logger
+    )
+    validation = _evaluate_split(
+        z_eval, predictor, data.edge_split.valid, device,
+        int(cfg.task.eval_edge_batch_size),
+    )
+    validation_payload = json.loads(validation_path.read_text(encoding="utf-8"))
+    checkpoint_metrics = checkpoint.get("metrics", {})
+    for name, value in validation.items():
+        metric_name = f"val_{name}"
+        if metric_name in checkpoint_metrics and not math.isclose(
+            float(checkpoint_metrics[metric_name]), value, rel_tol=0.0, abs_tol=1e-12
+        ):
+            raise ValueError(f"recomputed Validation {metric_name} differs from checkpoint")
+        if metric_name in validation_payload.get("metrics", {}) and not math.isclose(
+            float(validation_payload["metrics"][metric_name]), value,
+            rel_tol=0.0, abs_tol=1e-12,
+        ):
+            raise ValueError(f"saved validation record disagrees for {metric_name}")
+    if not math.isclose(
+        float(checkpoint_metrics["val_mrr"]), validation["mrr"],
+        rel_tol=0.0, abs_tol=1e-12,
+    ):
+        raise ValueError("recomputed Validation MRR differs from selected checkpoint")
+
+    test = _evaluate_split(
+        z_eval, predictor, data.edge_split.test, device,
+        int(cfg.task.eval_edge_batch_size),
+    )
+    metrics = {
+        **{f"val_{key}": value for key, value in validation.items()},
+        **{f"test_{key}": value for key, value in test.items()},
+    }
+    payload = {
+        "dataset": str(cfg.dataset.name),
+        "task": "lp",
+        "model": str(cfg.model.name),
+        "seed": int(cfg.seed),
+        "split_id": current_split_hash,
+        "protocol_version": str(cfg.task.protocol_version),
+        "best_epoch": int(checkpoint["epoch"]),
+        "selection_metric": "val_mrr",
+        "metrics": metrics,
+        "test_evaluation_count": 1,
+    }
+    write_json_atomic(final_path, payload)
+    status.update(
+        status="final_test_complete",
+        test_evaluation_count=1,
+        final_test_metrics_path=str(final_path),
+    )
+    write_json_atomic(status_path, status)
+    logger.info("Final Test metrics: %s", metrics)
+    return metrics

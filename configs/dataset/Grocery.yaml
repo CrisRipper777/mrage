@@ -12,7 +12,7 @@ feature_dtype: float32
 make_undirected: true
 add_self_loops: false
 
-nc_split_path: ${paths.split_root}/Grocery_nc_seed${seed}_train0.6_val0.2.pt
+nc_split_path: ${paths.split_root}/Grocery_nc_seed${dataset_split_seed}_train0.6_val0.2.pt
 lp_split_path: ${paths.split_root}/Grocery_lp_seed${seed}_val0.2_test0.2_neg150_filtered1.pt
 nc_train_ratio: 0.6
 nc_val_ratio: 0.2

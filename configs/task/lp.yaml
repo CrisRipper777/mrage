@@ -31,6 +31,7 @@ eval_every: 2
 max_train_batches: null
 train_pos_per_epoch: null
 eval_edge_batch_size: 512
+profile_timing: false
 
 loss:
   aux_weight: 1.0
@@ -44,3 +45,8 @@ decoder:
 
 save_ckpt_path: null
 evaluate_test: true
+phase: train # train | final_test (paper benchmark runner)
+checkpoint_path: null
+validation_metrics_path: null
+final_test_metrics_path: null
+paper_run_status_path: null

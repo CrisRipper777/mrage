@@ -197,12 +197,18 @@ class Model(nn.Module):
         self.text_dim = int(data_info["text_dim"])
         self.visual_dim = int(data_info["visual_dim"])
         if min(self.text_dim, self.visual_dim) <= 0 or self.text_dim + self.visual_dim != self.input_dim:
-            raise ValueError("mrcge_v11 requires a concatenated Text/Visual feature matrix")
+            raise ValueError("MRAGE requires one concatenated Text/Visual feature matrix")
         self.num_nodes = int(data_info.get("num_nodes", 0))
         # LP has no class head target; keep zero-width auxiliary heads there.
         # NC supplies its configured class count and follows the frozen V1.3-A path.
         self.num_classes = int(data_info.get("num_classes") or 0)
-        self.hidden_dim = int(mc.get("hidden_dim", 256))
+        raw_hidden_dim = mc.get("hidden_dim", 256)
+        try:
+            self.hidden_dim = int(raw_hidden_dim)
+            is_integral_hidden_dim = float(raw_hidden_dim) == float(self.hidden_dim)
+        except (TypeError, ValueError, OverflowError):
+            self.hidden_dim = 0
+            is_integral_hidden_dim = False
         self.num_experts = int(mc.get("num_experts", 4))
         self.top_k = int(mc.get("top_k", 2))
         self.dropout_p = float(mc.get("dropout", 0.2))
@@ -218,12 +224,16 @@ class Model(nn.Module):
         self.physical_hops = int(mc.get("physical_hops", 3))
         self.semantic_hops = int(mc.get("semantic_hops", 1))
         if (self.physical_hops, self.semantic_hops) != (3, 1):
-            raise ValueError("MR-CGE V1.2 freezes physical_hops=3 and semantic_hops=1")
-        if (self.hidden_dim, self.num_experts, self.top_k) != (256, 4, 2):
-            raise ValueError("MR-CGE V1.2 freezes hidden_dim=256, four experts and Top-2")
+            raise ValueError("MRAGE requires physical_hops=3 and semantic_hops=1")
+        if isinstance(raw_hidden_dim, bool) or not is_integral_hidden_dim or self.hidden_dim < 1:
+            raise ValueError("model.hidden_dim must be a positive integer")
+        if (self.num_experts, self.top_k) != (4, 2):
+            raise ValueError("MRAGE requires exactly four experts and Top-2 routing")
+        if int(mc.get("semantic_knn_k", 8)) != 8:
+            raise ValueError("MRAGE's validated V7B.1 semantic graph requires semantic_knn_k=8")
 
-        # Construct all common modules in the same order for S/F/M. Their initial
-        # tensors can be checked by exact state_dict hashes under a fixed seed.
+        # Preserve module creation order so default-model initialization remains
+        # bitwise compatible with the frozen reference implementation.
         self.projectors = nn.ModuleDict({
             "text": _IntrinsicProjector(self.text_dim, self.hidden_dim, self.dropout_p),
             "visual": _IntrinsicProjector(self.visual_dim, self.hidden_dim, self.dropout_p),
@@ -262,7 +272,7 @@ class Model(nn.Module):
         self.fusion_dropout = nn.Dropout(float(mc.get("fusion_dropout", 0.2)))
         self.fusion_norm = nn.LayerNorm(self.hidden_dim)
 
-        # Preserve the frozen M_repaired initialization order and RNG behavior.
+        # Keep the formal MRAGE parameter creation order stable.
         with torch.random.fork_rng(devices=[]):
             self.filter_bank = SharedExpertBank(self.hidden_dim, int(mc.get("expert_bottleneck", 64)), self.dropout_p, self.eta)
             self.router = GraphAwareRouter(
@@ -270,9 +280,8 @@ class Model(nn.Module):
                 int(mc.get("router_hidden_dim", 256)), self.dropout_p
             )
 
-        # Keep V1.2 shared modules and the external NC classifier initialization
-        # unchanged: the new network's random first layer is isolated from the
-        # caller's RNG stream, and its zero output layer starts at unit scales.
+        # Isolate the Joint View module's random first layer from the caller's
+        # RNG stream; its zero output layer starts at unit scales.
         with torch.random.fork_rng(devices=[]):
             self.joint_view = JointViewContribution(self.hidden_dim, 32)
 
@@ -476,8 +485,8 @@ class Model(nn.Module):
         coefficients = self.filter_bank.coefficients(max_order, basis[0].dtype)
         first = basis[1] if len(basis) > 1 else basis[0]
         # Prepare the deterministic router input projection before expert
-        # Dropout. The router Dropout is applied after all four experts, which
-        # preserves V1.1's train-time RNG consumption order.
+        # Dropout. The router Dropout is applied after all four experts to
+        # preserve the established train-time RNG consumption order.
         n = current.size(0)
         mod = self.router.modality_embedding.weight[modality_id].expand(n, -1)
         rel = self.router.relation_embedding.weight[relation_id].expand(n, -1)
@@ -491,7 +500,7 @@ class Model(nn.Module):
             pre_activation = contribution if pre_activation is None else pre_activation + contribution
             offset += width
         if offset != first_layer.in_features:
-            raise RuntimeError("router input component widths do not match its frozen linear layer")
+            raise RuntimeError("router input component widths do not match its configured linear layer")
         if first_layer.bias is not None:
             pre_activation = pre_activation + first_layer.bias
         router_hidden = F.gelu(pre_activation)
