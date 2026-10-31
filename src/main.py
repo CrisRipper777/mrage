@@ -75,7 +75,7 @@ def main(cfg: DictConfig) -> None:
             raise ValueError("graph override contains node IDs outside the loaded dataset")
         data.edge_index = edge_index
         data.info["edge_index_override_path"] = str(resolve_path(str(edge_override)))
-    if str(cfg.model.name).lower() == "mrage":
+    if str(cfg.model.name).lower() in {"mrage", "mrage_ablation"}:
         if data.x_t is None or data.x_i is None:
             raise ValueError("MRAGE requires separate Text and Visual feature matrices")
         model_knn_k = int(cfg.model.get("semantic_knn_k", 8))
