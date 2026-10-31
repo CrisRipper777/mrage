@@ -1,0 +1,12 @@
+{
+  "at_utc": "2026-10-30T17:25:18.134052+00:00",
+  "completed_validation_trials": 136,
+  "final_test_trials": 0,
+  "original_mrage_unchanged": true,
+  "test_evaluation_counts": [
+    0
+  ],
+  "budget_reached": 0,
+  "failed_ledger_rows": 0,
+  "three_seed_complete_cells": 15
+}

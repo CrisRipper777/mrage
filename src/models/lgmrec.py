@@ -49,11 +49,17 @@ class HGNNLayer(nn.Module):
 
 
 class Model(nn.Module):
-    supports_link_prediction = False
-
-    """LGMRec NC encoder (unified protocol: no aux losses). Repo interface:
+    """LGMRec encoder (unified protocol: no aux losses). Repo interface:
     forward -> (z, None, None, aux_loss, aux_info); inference -> CPU z;
     ``out_dim`` = hidden_dim."""
+
+    supports_link_prediction = True
+    lp_sampled_context = (
+        "The hypergraph assignment and global aggregation are computed over "
+        "the current LinkNeighborLoader subgraph during training; evaluation "
+        "uses the full train graph."
+    )
+    lp_sampled_adapter_version = "sampled_subgraph_v1"
 
     def __init__(self, cfg, data_info):
         super().__init__()
@@ -88,6 +94,15 @@ class Model(nn.Module):
         z = self._encode(x, edge_index)
         aux_loss = z.new_tensor(0.0)
         return z, None, None, aux_loss, {}
+
+    def forward_lp_sampled(self, x: torch.Tensor, edge_index: torch.Tensor):
+        """Run local LightGCN and batch-context hypergraph encoding for LP."""
+        if edge_index is None:
+            raise ValueError("LGMRec sampled LP requires edge_index")
+        output = self.forward(x, edge_index)
+        if output[0].size(0) != x.size(0):
+            raise RuntimeError("LGMRec sampled LP must return one embedding per sampled node")
+        return output
 
     @torch.no_grad()
     def inference(

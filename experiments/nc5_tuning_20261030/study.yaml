@@ -1,0 +1,498 @@
+study_id: nc5_tuning_20261030
+datasets:
+- Movies
+- Toys
+- Grocery
+- ele-fashion
+- Reddit-S
+representatives:
+- Movies
+- Grocery
+- ele-fashion
+selection_metric: mean_validation_accuracy
+selection_note: Prefer one shared configuration; allow ele-fashion a separate configuration
+  if three-seed validation supports it.
+fashion_exception_min_gain_pp: 0.5
+fashion_exception_min_seed_wins: 2
+common_overrides: {}
+strategy: Sequential one-parameter searches on representatives with seed42, then NC5
+  validation and seeds42/43/44 confirmation. Test excluded from tuning.
+parameter_schedule:
+  training:
+    task.lr:
+    - 0.001
+    - 0.0006
+    - 0.0003
+    task.weight_decay:
+    - 1.0e-05
+    - 0.0001
+    - 0.001
+    model.dropout:
+    - 0.1
+    - 0.2
+    - 0.3
+  relation_contributions:
+    model.gamma_init:
+    - 0.04
+    - 0.08
+    - 0.16
+    - 0.25
+    model.beta_init:
+    - 0.05
+    - 0.15
+    - 0.25
+    - 0.4
+    model.rho_init:
+    - 0.15
+    - 0.25
+    - 0.4
+  routing_attention:
+    model.router_hidden_dim:
+    - 128
+    - 256
+    - 512
+    model.attention_dim:
+    - 16
+    - 32
+    - 64
+    model.router_embed_dim:
+    - 4
+    - 8
+    - 16
+    model.channel_gate_hidden:
+    - 64
+    - 128
+    - 256
+  auxiliary_experts:
+    model.nc_unimodal_weight:
+    - 0.1
+    - 0.3
+    - 0.5
+    model.balance_weight:
+    - 0.001
+    - 0.01
+    - 0.03
+    model.expert_bottleneck:
+    - 32
+    - 64
+    - 128
+    model.expert_eta:
+    - 0.05
+    - 0.1
+    - 0.2
+  representation_last:
+    model.hidden_dim:
+    - 128
+    - 256
+    - 512
+candidates:
+  baseline:
+    description: Current MRAGE and NC task defaults.
+    overrides: {}
+  lr3e4:
+    description: Hidden 256 with a lower learning rate.
+    overrides:
+      task:
+        lr: 0.0003
+  lr6e4:
+    description: Change only learning rate to 0.0006.
+    overrides:
+      task:
+        lr: 0.0006
+  a01_weight_decay_1em05:
+    description: Change only task.weight_decay to 1e-05 from baseline.
+    stage: training
+    anchor: baseline
+    changed_parameter: task.weight_decay
+    changed_value: 1.0e-05
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+  a01_weight_decay_0p001:
+    description: Change only task.weight_decay to 0.001 from baseline.
+    stage: training
+    anchor: baseline
+    changed_parameter: task.weight_decay
+    changed_value: 0.001
+    overrides:
+      task:
+        weight_decay: 0.001
+  a02_dropout_0p1:
+    description: Change only model.dropout to 0.1 from a01_weight_decay_1em05.
+    stage: training
+    anchor: a01_weight_decay_1em05
+    changed_parameter: model.dropout
+    changed_value: 0.1
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.1
+  a02_dropout_0p3:
+    description: Change only model.dropout to 0.3 from a01_weight_decay_1em05.
+    stage: training
+    anchor: a01_weight_decay_1em05
+    changed_parameter: model.dropout
+    changed_value: 0.3
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+  a03_gamma_init_0p04:
+    description: Change only model.gamma_init to 0.04 from a02_dropout_0p3.
+    stage: relation_contributions
+    anchor: a02_dropout_0p3
+    changed_parameter: model.gamma_init
+    changed_value: 0.04
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.04
+  a03_gamma_init_0p16:
+    description: Change only model.gamma_init to 0.16 from a02_dropout_0p3.
+    stage: relation_contributions
+    anchor: a02_dropout_0p3
+    changed_parameter: model.gamma_init
+    changed_value: 0.16
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+  a03_gamma_init_0p25:
+    description: Change only model.gamma_init to 0.25 from a02_dropout_0p3.
+    stage: relation_contributions
+    anchor: a02_dropout_0p3
+    changed_parameter: model.gamma_init
+    changed_value: 0.25
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.25
+  a04_beta_init_0p05:
+    description: Change only model.beta_init to 0.05 from a03_gamma_init_0p16.
+    stage: relation_contributions
+    anchor: a03_gamma_init_0p16
+    changed_parameter: model.beta_init
+    changed_value: 0.05
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+  a04_beta_init_0p15:
+    description: Change only model.beta_init to 0.15 from a03_gamma_init_0p16.
+    stage: relation_contributions
+    anchor: a03_gamma_init_0p16
+    changed_parameter: model.beta_init
+    changed_value: 0.15
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.15
+  a04_beta_init_0p4:
+    description: Change only model.beta_init to 0.4 from a03_gamma_init_0p16.
+    stage: relation_contributions
+    anchor: a03_gamma_init_0p16
+    changed_parameter: model.beta_init
+    changed_value: 0.4
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.4
+  a05_rho_init_0p15:
+    description: Change only model.rho_init to 0.15 from a04_beta_init_0p05.
+    stage: relation_contributions
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.rho_init
+    changed_value: 0.15
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        rho_init: 0.15
+  a05_rho_init_0p4:
+    description: Change only model.rho_init to 0.4 from a04_beta_init_0p05.
+    stage: relation_contributions
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.rho_init
+    changed_value: 0.4
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        rho_init: 0.4
+  a06_router_hidden_dim_128:
+    description: Change only model.router_hidden_dim to 128 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.router_hidden_dim
+    changed_value: 128
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        router_hidden_dim: 128
+  a06_router_hidden_dim_512:
+    description: Change only model.router_hidden_dim to 512 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.router_hidden_dim
+    changed_value: 512
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        router_hidden_dim: 512
+  a07_attention_dim_16:
+    description: Change only model.attention_dim to 16 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.attention_dim
+    changed_value: 16
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        attention_dim: 16
+  a07_attention_dim_64:
+    description: Change only model.attention_dim to 64 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.attention_dim
+    changed_value: 64
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        attention_dim: 64
+  a08_router_embed_dim_4:
+    description: Change only model.router_embed_dim to 4 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.router_embed_dim
+    changed_value: 4
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        router_embed_dim: 4
+  a08_router_embed_dim_16:
+    description: Change only model.router_embed_dim to 16 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.router_embed_dim
+    changed_value: 16
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        router_embed_dim: 16
+  a09_channel_gate_hidden_64:
+    description: Change only model.channel_gate_hidden to 64 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.channel_gate_hidden
+    changed_value: 64
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        channel_gate_hidden: 64
+  a09_channel_gate_hidden_256:
+    description: Change only model.channel_gate_hidden to 256 from a04_beta_init_0p05.
+    stage: routing_attention
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.channel_gate_hidden
+    changed_value: 256
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        channel_gate_hidden: 256
+  a10_nc_unimodal_weight_0p1:
+    description: Change only model.nc_unimodal_weight to 0.1 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.nc_unimodal_weight
+    changed_value: 0.1
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        nc_unimodal_weight: 0.1
+  a10_nc_unimodal_weight_0p5:
+    description: Change only model.nc_unimodal_weight to 0.5 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.nc_unimodal_weight
+    changed_value: 0.5
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        nc_unimodal_weight: 0.5
+  a11_balance_weight_0p001:
+    description: Change only model.balance_weight to 0.001 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.balance_weight
+    changed_value: 0.001
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        balance_weight: 0.001
+  a11_balance_weight_0p03:
+    description: Change only model.balance_weight to 0.03 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.balance_weight
+    changed_value: 0.03
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        balance_weight: 0.03
+  a12_expert_bottleneck_32:
+    description: Change only model.expert_bottleneck to 32 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.expert_bottleneck
+    changed_value: 32
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        expert_bottleneck: 32
+  a12_expert_bottleneck_128:
+    description: Change only model.expert_bottleneck to 128 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.expert_bottleneck
+    changed_value: 128
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        expert_bottleneck: 128
+  a13_expert_eta_0p05:
+    description: Change only model.expert_eta to 0.05 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.expert_eta
+    changed_value: 0.05
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        expert_eta: 0.05
+  a13_expert_eta_0p2:
+    description: Change only model.expert_eta to 0.2 from a04_beta_init_0p05.
+    stage: auxiliary_experts
+    anchor: a04_beta_init_0p05
+    changed_parameter: model.expert_eta
+    changed_value: 0.2
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        expert_eta: 0.2
+  a14_hidden_dim_128:
+    description: Change only model.hidden_dim to 128 from a13_expert_eta_0p2.
+    stage: representation_last
+    anchor: a13_expert_eta_0p2
+    changed_parameter: model.hidden_dim
+    changed_value: 128
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        expert_eta: 0.2
+        hidden_dim: 128
+  a14_hidden_dim_512:
+    description: Change only model.hidden_dim to 512 from a13_expert_eta_0p2.
+    stage: representation_last
+    anchor: a13_expert_eta_0p2
+    changed_parameter: model.hidden_dim
+    changed_value: 512
+    overrides:
+      task:
+        weight_decay: 1.0e-05
+      model:
+        dropout: 0.3
+        gamma_init: 0.16
+        beta_init: 0.05
+        expert_eta: 0.2
+        hidden_dim: 512

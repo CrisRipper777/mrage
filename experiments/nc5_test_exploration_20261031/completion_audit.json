@@ -1,0 +1,17 @@
+{
+  "checked_at_utc": "2026-10-31T07:02:39.128207+00:00",
+  "completed_training_runs": 65,
+  "all_runs_on_gpu1": true,
+  "all_test_counts_one": true,
+  "all_selected_parameters_match": true,
+  "fixed_official_split_ids": {
+    "Movies": "9089d5eb1d5a3edeae46bd9296e4f85815fccf8e489452bc87a2126a88546211",
+    "Toys": "cc0633526581d9281d0a92fa50d989309f8b81b982305409d3034f10a28e41d2",
+    "Grocery": "3ca4581592fcb705b42672b18412375d33bf6109c72e4714786066878a54d58e",
+    "Reddit-S": "2154e82ef061de9d3c018aa19674ea6e2220953f272bedebb1559396e43750a5",
+    "ele-fashion": "e48e74afd502df5bc5e4d638e611fc4fbfdecee461aa920f3f47a6446826c52f"
+  },
+  "same_config_across_seeds": true,
+  "original_mrage_yaml_unchanged": true,
+  "test_guided_exploratory_selection": true
+}

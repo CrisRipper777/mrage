@@ -1,0 +1,4 @@
+- dataset=Movies
+- task=nc
+- model=mrage
+- device=cuda:1

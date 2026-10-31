@@ -1,0 +1,763 @@
+{
+  "candidates": [
+    {
+      "candidate": "a14_hidden_dim_128",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 93,
+          "val_acc": 0.8357247710227966,
+          "val_macro_f1": 0.7702688649371716
+        },
+        "Movies": {
+          "best_epoch": 100,
+          "val_acc": 0.5638872385025024,
+          "val_macro_f1": 0.5003452553114209
+        },
+        "ele-fashion": {
+          "best_epoch": 145,
+          "val_acc": 0.8743991255760193,
+          "val_macro_f1": 0.6745791981542936
+        }
+      },
+      "mean_val_acc": 0.7580037117004395,
+      "mean_val_macro_f1": 0.648397772800962,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a13_expert_eta_0p2",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 79,
+          "val_acc": 0.8360175490379333,
+          "val_macro_f1": 0.7680136795850692
+        },
+        "Movies": {
+          "best_epoch": 73,
+          "val_acc": 0.5635873079299927,
+          "val_macro_f1": 0.4773368482132117
+        },
+        "ele-fashion": {
+          "best_epoch": 133,
+          "val_acc": 0.8743991255760193,
+          "val_macro_f1": 0.6843397837442932
+        }
+      },
+      "mean_val_acc": 0.7580013275146484,
+      "mean_val_macro_f1": 0.6432301038475247,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a04_beta_init_0p05",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 64,
+          "val_acc": 0.8327965140342712,
+          "val_macro_f1": 0.7659299307177668
+        },
+        "Movies": {
+          "best_epoch": 87,
+          "val_acc": 0.5620875954627991,
+          "val_macro_f1": 0.48548661133990567
+        },
+        "ele-fashion": {
+          "best_epoch": 132,
+          "val_acc": 0.8772629499435425,
+          "val_macro_f1": 0.6766831655035833
+        }
+      },
+      "mean_val_acc": 0.757382353146871,
+      "mean_val_macro_f1": 0.6426999025204186,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a03_gamma_init_0p16",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 72,
+          "val_acc": 0.8333821296691895,
+          "val_macro_f1": 0.7642707889328823
+        },
+        "Movies": {
+          "best_epoch": 74,
+          "val_acc": 0.5635873079299927,
+          "val_macro_f1": 0.4725056472571132
+        },
+        "ele-fashion": {
+          "best_epoch": 110,
+          "val_acc": 0.873274028301239,
+          "val_macro_f1": 0.6743246759384235
+        }
+      },
+      "mean_val_acc": 0.756747821966807,
+      "mean_val_macro_f1": 0.6370337040428063,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a03_gamma_init_0p25",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 62,
+          "val_acc": 0.8327965140342712,
+          "val_macro_f1": 0.7572293891498714
+        },
+        "Movies": {
+          "best_epoch": 64,
+          "val_acc": 0.5626874566078186,
+          "val_macro_f1": 0.47120228482802473
+        },
+        "ele-fashion": {
+          "best_epoch": 126,
+          "val_acc": 0.8745014071464539,
+          "val_macro_f1": 0.6810731181244182
+        }
+      },
+      "mean_val_acc": 0.7566617925961813,
+      "mean_val_macro_f1": 0.636501597367438,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a12_expert_bottleneck_128",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 88,
+          "val_acc": 0.8345534205436707,
+          "val_macro_f1": 0.7795400664962147
+        },
+        "Movies": {
+          "best_epoch": 63,
+          "val_acc": 0.5587882399559021,
+          "val_macro_f1": 0.47545992537892434
+        },
+        "ele-fashion": {
+          "best_epoch": 142,
+          "val_acc": 0.8765469789505005,
+          "val_macro_f1": 0.6868321214746996
+        }
+      },
+      "mean_val_acc": 0.7566295464833578,
+      "mean_val_macro_f1": 0.6472773711166129,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a05_rho_init_0p4",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 89,
+          "val_acc": 0.833674967288971,
+          "val_macro_f1": 0.7709668335867275
+        },
+        "Movies": {
+          "best_epoch": 89,
+          "val_acc": 0.5620875954627991,
+          "val_macro_f1": 0.48576592314263767
+        },
+        "ele-fashion": {
+          "best_epoch": 111,
+          "val_acc": 0.8738877177238464,
+          "val_macro_f1": 0.6796497534293109
+        }
+      },
+      "mean_val_acc": 0.7565500934918722,
+      "mean_val_macro_f1": 0.6454608367195587,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a08_router_embed_dim_16",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 80,
+          "val_acc": 0.8351390957832336,
+          "val_macro_f1": 0.7728522823310694
+        },
+        "Movies": {
+          "best_epoch": 73,
+          "val_acc": 0.5593881011009216,
+          "val_macro_f1": 0.48811414238766104
+        },
+        "ele-fashion": {
+          "best_epoch": 128,
+          "val_acc": 0.874705970287323,
+          "val_macro_f1": 0.6826447046150621
+        }
+      },
+      "mean_val_acc": 0.756411055723826,
+      "mean_val_macro_f1": 0.6478703764445976,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a06_router_hidden_dim_128",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 65,
+          "val_acc": 0.833674967288971,
+          "val_macro_f1": 0.7622344407027957
+        },
+        "Movies": {
+          "best_epoch": 79,
+          "val_acc": 0.5596880912780762,
+          "val_macro_f1": 0.47168074917156577
+        },
+        "ele-fashion": {
+          "best_epoch": 133,
+          "val_acc": 0.8758310079574585,
+          "val_macro_f1": 0.6849507401994045
+        }
+      },
+      "mean_val_acc": 0.7563980221748352,
+      "mean_val_macro_f1": 0.6396219766912553,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a12_expert_bottleneck_32",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 71,
+          "val_acc": 0.8345534205436707,
+          "val_macro_f1": 0.769151502943886
+        },
+        "Movies": {
+          "best_epoch": 79,
+          "val_acc": 0.5587882399559021,
+          "val_macro_f1": 0.4985104674455442
+        },
+        "ele-fashion": {
+          "best_epoch": 128,
+          "val_acc": 0.8755241632461548,
+          "val_macro_f1": 0.6815424309736978
+        }
+      },
+      "mean_val_acc": 0.7562886079152426,
+      "mean_val_macro_f1": 0.649734800454376,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a13_expert_eta_0p05",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 86,
+          "val_acc": 0.833089292049408,
+          "val_macro_f1": 0.762365228698972
+        },
+        "Movies": {
+          "best_epoch": 95,
+          "val_acc": 0.5605878829956055,
+          "val_macro_f1": 0.5029267165447445
+        },
+        "ele-fashion": {
+          "best_epoch": 108,
+          "val_acc": 0.8750127553939819,
+          "val_macro_f1": 0.6794337682259918
+        }
+      },
+      "mean_val_acc": 0.7562299768129984,
+      "mean_val_macro_f1": 0.6482419044899027,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a02_dropout_0p3",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 101,
+          "val_acc": 0.8354319334030151,
+          "val_macro_f1": 0.7669679179567624
+        },
+        "Movies": {
+          "best_epoch": 86,
+          "val_acc": 0.5593881011009216,
+          "val_macro_f1": 0.468339379372907
+        },
+        "ele-fashion": {
+          "best_epoch": 133,
+          "val_acc": 0.8737854361534119,
+          "val_macro_f1": 0.6756676835899698
+        }
+      },
+      "mean_val_acc": 0.7562018235524496,
+      "mean_val_macro_f1": 0.6369916603065464,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a01_weight_decay_1em05",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 89,
+          "val_acc": 0.8363103866577148,
+          "val_macro_f1": 0.7693942828011295
+        },
+        "Movies": {
+          "best_epoch": 64,
+          "val_acc": 0.5584883093833923,
+          "val_macro_f1": 0.4821366530440755
+        },
+        "ele-fashion": {
+          "best_epoch": 145,
+          "val_acc": 0.8730694651603699,
+          "val_macro_f1": 0.6855001085690778
+        }
+      },
+      "mean_val_acc": 0.7559560537338257,
+      "mean_val_macro_f1": 0.6456770148047609,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a09_channel_gate_hidden_64",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 49,
+          "val_acc": 0.8327965140342712,
+          "val_macro_f1": 0.7605773192648255
+        },
+        "Movies": {
+          "best_epoch": 80,
+          "val_acc": 0.5569885969161987,
+          "val_macro_f1": 0.4743682446091756
+        },
+        "ele-fashion": {
+          "best_epoch": 135,
+          "val_acc": 0.8779789209365845,
+          "val_macro_f1": 0.693200360117863
+        }
+      },
+      "mean_val_acc": 0.7559213439623514,
+      "mean_val_macro_f1": 0.642715307997288,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a10_nc_unimodal_weight_0p5",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 91,
+          "val_acc": 0.8348462581634521,
+          "val_macro_f1": 0.7705109052892726
+        },
+        "Movies": {
+          "best_epoch": 60,
+          "val_acc": 0.5569885969161987,
+          "val_macro_f1": 0.4740974621494426
+        },
+        "ele-fashion": {
+          "best_epoch": 127,
+          "val_acc": 0.8758310079574585,
+          "val_macro_f1": 0.6808190400085926
+        }
+      },
+      "mean_val_acc": 0.7558886210123698,
+      "mean_val_macro_f1": 0.6418091358157693,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a04_beta_init_0p4",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 74,
+          "val_acc": 0.8354319334030151,
+          "val_macro_f1": 0.7647974663591329
+        },
+        "Movies": {
+          "best_epoch": 66,
+          "val_acc": 0.5578884482383728,
+          "val_macro_f1": 0.48590216051639346
+        },
+        "ele-fashion": {
+          "best_epoch": 118,
+          "val_acc": 0.8734785914421082,
+          "val_macro_f1": 0.6836800117645748
+        }
+      },
+      "mean_val_acc": 0.7555996576944987,
+      "mean_val_macro_f1": 0.6447932128800337,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a09_channel_gate_hidden_256",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 69,
+          "val_acc": 0.8322108387947083,
+          "val_macro_f1": 0.7606830159028786
+        },
+        "Movies": {
+          "best_epoch": 70,
+          "val_acc": 0.5590881705284119,
+          "val_macro_f1": 0.48182386016435
+        },
+        "ele-fashion": {
+          "best_epoch": 124,
+          "val_acc": 0.8754218816757202,
+          "val_macro_f1": 0.6797010529853088
+        }
+      },
+      "mean_val_acc": 0.7555736303329468,
+      "mean_val_macro_f1": 0.6407359763508458,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a11_balance_weight_0p001",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 69,
+          "val_acc": 0.8339678049087524,
+          "val_macro_f1": 0.7625439406966253
+        },
+        "Movies": {
+          "best_epoch": 56,
+          "val_acc": 0.5569885969161987,
+          "val_macro_f1": 0.47783404499530446
+        },
+        "ele-fashion": {
+          "best_epoch": 128,
+          "val_acc": 0.8756264448165894,
+          "val_macro_f1": 0.6820343513529646
+        }
+      },
+      "mean_val_acc": 0.7555276155471802,
+      "mean_val_macro_f1": 0.6408041123482981,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "baseline",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 82,
+          "val_acc": 0.8363103866577148,
+          "val_macro_f1": 0.7642851800405281
+        },
+        "Movies": {
+          "best_epoch": 72,
+          "val_acc": 0.5575884580612183,
+          "val_macro_f1": 0.46819924638153176
+        },
+        "ele-fashion": {
+          "best_epoch": 127,
+          "val_acc": 0.8723534941673279,
+          "val_macro_f1": 0.6711143560848875
+        }
+      },
+      "mean_val_acc": 0.7554174462954203,
+      "mean_val_macro_f1": 0.6345329275023158,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a01_weight_decay_0p001",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 96,
+          "val_acc": 0.8345534205436707,
+          "val_macro_f1": 0.7735140664066338
+        },
+        "Movies": {
+          "best_epoch": 67,
+          "val_acc": 0.5587882399559021,
+          "val_macro_f1": 0.48529758624003244
+        },
+        "ele-fashion": {
+          "best_epoch": 151,
+          "val_acc": 0.8728649020195007,
+          "val_macro_f1": 0.6748075730937547
+        }
+      },
+      "mean_val_acc": 0.7554021875063578,
+      "mean_val_macro_f1": 0.6445397419134736,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a03_gamma_init_0p04",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 80,
+          "val_acc": 0.8360175490379333,
+          "val_macro_f1": 0.7745054419513769
+        },
+        "Movies": {
+          "best_epoch": 75,
+          "val_acc": 0.5560888051986694,
+          "val_macro_f1": 0.45091269588699856
+        },
+        "ele-fashion": {
+          "best_epoch": 106,
+          "val_acc": 0.873989999294281,
+          "val_macro_f1": 0.671263720950887
+        }
+      },
+      "mean_val_acc": 0.7553654511769613,
+      "mean_val_macro_f1": 0.6322272862630874,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a07_attention_dim_64",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 57,
+          "val_acc": 0.8313323855400085,
+          "val_macro_f1": 0.7619679671923515
+        },
+        "Movies": {
+          "best_epoch": 93,
+          "val_acc": 0.5575884580612183,
+          "val_macro_f1": 0.48241620545016256
+        },
+        "ele-fashion": {
+          "best_epoch": 166,
+          "val_acc": 0.8766492605209351,
+          "val_macro_f1": 0.6924157777868993
+        }
+      },
+      "mean_val_acc": 0.7551900347073873,
+      "mean_val_macro_f1": 0.6455999834764711,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "lr6e4",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 86,
+          "val_acc": 0.8348462581634521,
+          "val_macro_f1": 0.7660806091320482
+        },
+        "Movies": {
+          "best_epoch": 79,
+          "val_acc": 0.5548890233039856,
+          "val_macro_f1": 0.47362686760112227
+        },
+        "ele-fashion": {
+          "best_epoch": 140,
+          "val_acc": 0.8758310079574585,
+          "val_macro_f1": 0.6769189067602933
+        }
+      },
+      "mean_val_acc": 0.7551887631416321,
+      "mean_val_macro_f1": 0.6388754611644879,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a10_nc_unimodal_weight_0p1",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 83,
+          "val_acc": 0.8342606425285339,
+          "val_macro_f1": 0.7677252709973897
+        },
+        "Movies": {
+          "best_epoch": 71,
+          "val_acc": 0.5584883093833923,
+          "val_macro_f1": 0.46995444389353336
+        },
+        "ele-fashion": {
+          "best_epoch": 103,
+          "val_acc": 0.8727626204490662,
+          "val_macro_f1": 0.6739865204453976
+        }
+      },
+      "mean_val_acc": 0.7551705241203308,
+      "mean_val_macro_f1": 0.6372220784454402,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a04_beta_init_0p15",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 61,
+          "val_acc": 0.831039547920227,
+          "val_macro_f1": 0.7555848180732782
+        },
+        "Movies": {
+          "best_epoch": 76,
+          "val_acc": 0.5578884482383728,
+          "val_macro_f1": 0.47256234360406946
+        },
+        "ele-fashion": {
+          "best_epoch": 134,
+          "val_acc": 0.8751150369644165,
+          "val_macro_f1": 0.6680540419665252
+        }
+      },
+      "mean_val_acc": 0.7546810110410055,
+      "mean_val_macro_f1": 0.632067067881291,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a08_router_embed_dim_4",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 71,
+          "val_acc": 0.8307467103004456,
+          "val_macro_f1": 0.7570961660885926
+        },
+        "Movies": {
+          "best_epoch": 78,
+          "val_acc": 0.5575884580612183,
+          "val_macro_f1": 0.5035232753020517
+        },
+        "ele-fashion": {
+          "best_epoch": 117,
+          "val_acc": 0.8751150369644165,
+          "val_macro_f1": 0.6803004550697006
+        }
+      },
+      "mean_val_acc": 0.7544834017753601,
+      "mean_val_macro_f1": 0.646973298820115,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a07_attention_dim_16",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 75,
+          "val_acc": 0.8322108387947083,
+          "val_macro_f1": 0.7602483695287657
+        },
+        "Movies": {
+          "best_epoch": 67,
+          "val_acc": 0.5548890233039856,
+          "val_macro_f1": 0.4650824149941001
+        },
+        "ele-fashion": {
+          "best_epoch": 127,
+          "val_acc": 0.8757287263870239,
+          "val_macro_f1": 0.6789165794992095
+        }
+      },
+      "mean_val_acc": 0.7542761961619059,
+      "mean_val_macro_f1": 0.6347491213406918,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a02_dropout_0p1",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 74,
+          "val_acc": 0.8327965140342712,
+          "val_macro_f1": 0.7618351616991179
+        },
+        "Movies": {
+          "best_epoch": 56,
+          "val_acc": 0.5542891621589661,
+          "val_macro_f1": 0.4639328165357168
+        },
+        "ele-fashion": {
+          "best_epoch": 151,
+          "val_acc": 0.8748082518577576,
+          "val_macro_f1": 0.6887940285251246
+        }
+      },
+      "mean_val_acc": 0.7539646426836649,
+      "mean_val_macro_f1": 0.6381873355866531,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a05_rho_init_0p15",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 75,
+          "val_acc": 0.8322108387947083,
+          "val_macro_f1": 0.7683435023114479
+        },
+        "Movies": {
+          "best_epoch": 67,
+          "val_acc": 0.5539892315864563,
+          "val_macro_f1": 0.4720325703210423
+        },
+        "ele-fashion": {
+          "best_epoch": 114,
+          "val_acc": 0.8752173185348511,
+          "val_macro_f1": 0.6797511564720287
+        }
+      },
+      "mean_val_acc": 0.7538057963053385,
+      "mean_val_macro_f1": 0.6400424097015063,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "lr3e4",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 139,
+          "val_acc": 0.8363103866577148,
+          "val_macro_f1": 0.7644800374268435
+        },
+        "Movies": {
+          "best_epoch": 111,
+          "val_acc": 0.5560888051986694,
+          "val_macro_f1": 0.4631694591105915
+        },
+        "ele-fashion": {
+          "best_epoch": 81,
+          "val_acc": 0.8684667944908142,
+          "val_macro_f1": 0.6625307204214058
+        }
+      },
+      "mean_val_acc": 0.7536219954490662,
+      "mean_val_macro_f1": 0.6300600723196136,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a06_router_hidden_dim_512",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 73,
+          "val_acc": 0.8304538726806641,
+          "val_macro_f1": 0.7637717725309427
+        },
+        "Movies": {
+          "best_epoch": 55,
+          "val_acc": 0.5551889538764954,
+          "val_macro_f1": 0.48258216265544157
+        },
+        "ele-fashion": {
+          "best_epoch": 139,
+          "val_acc": 0.8749105334281921,
+          "val_macro_f1": 0.6826941389790568
+        }
+      },
+      "mean_val_acc": 0.7535177866617838,
+      "mean_val_macro_f1": 0.6430160247218137,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a11_balance_weight_0p03",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 63,
+          "val_acc": 0.8292825818061829,
+          "val_macro_f1": 0.7554939818408359
+        },
+        "Movies": {
+          "best_epoch": 70,
+          "val_acc": 0.5536892414093018,
+          "val_macro_f1": 0.4672531264377489
+        },
+        "ele-fashion": {
+          "best_epoch": 122,
+          "val_acc": 0.8755241632461548,
+          "val_macro_f1": 0.684117977234178
+        }
+      },
+      "mean_val_acc": 0.7528319954872131,
+      "mean_val_macro_f1": 0.6356216951709209,
+      "num_datasets": 3
+    },
+    {
+      "candidate": "a14_hidden_dim_512",
+      "datasets": {
+        "Grocery": {
+          "best_epoch": 82,
+          "val_acc": 0.8275256156921387,
+          "val_macro_f1": 0.7652157834928645
+        },
+        "Movies": {
+          "best_epoch": 62,
+          "val_acc": 0.550089955329895,
+          "val_macro_f1": 0.4670117920528726
+        },
+        "ele-fashion": {
+          "best_epoch": 151,
+          "val_acc": 0.8768538236618042,
+          "val_macro_f1": 0.697107646618507
+        }
+      },
+      "mean_val_acc": 0.7514897982279459,
+      "mean_val_macro_f1": 0.6431117407214146,
+      "num_datasets": 3
+    }
+  ]
+}

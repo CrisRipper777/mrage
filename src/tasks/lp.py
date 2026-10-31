@@ -592,6 +592,13 @@ def _run_single_lp(
     logger.info("Protocol: %s", str(cfg.task.protocol_version))
     logger.info("LP training mode: sampled")
     logger.info("Loader: %s", "LinkNeighborLoader" if uses_graph else "EdgeLabelDataLoader")
+    sampled_context = getattr(model, "lp_sampled_context", None)
+    if sampled_context:
+        logger.info("Model sampled-LP context: %s", sampled_context)
+    sampled_adapter_version = getattr(
+        model, "lp_sampled_adapter_version", "standard_link_neighbor_subgraph_v1"
+    )
+    logger.info("Sampled-LP adapter version: %s", sampled_adapter_version)
     if uses_graph:
         logger.info("Train neighbor sampling fanouts: %s", _resolve_lp_num_neighbors(cfg, model))
         logger.info("Positive message-edge masking: %s", mask_backend)
@@ -705,7 +712,13 @@ def _run_single_lp(
                 if hasattr(model, "_batch_n_id"):
                     model._batch_n_id = batch.n_id
                 with profile.measure("forward"):
-                    z, _, _, aux_loss, _ = model(batch.x, batch.edge_index)
+                    sampled_forward = getattr(model, "forward_lp_sampled", None)
+                    if callable(sampled_forward):
+                        z, _, _, aux_loss, _ = sampled_forward(
+                            batch.x, batch.edge_index
+                        )
+                    else:
+                        z, _, _, aux_loss, _ = model(batch.x, batch.edge_index)
                     if projection is not None:
                         z = projection(z)
                     src, dst = batch.edge_label_index
@@ -839,6 +852,8 @@ def _run_single_lp(
         "split_sha256": data.info.get("lp_split_sha256", data.info.get("edge_split_sha256")),
         "profile_timing_enabled": profile.enabled,
         "profile_epoch_seconds": profile_epoch_records,
+        "lp_sampled_context": sampled_context or "standard_link_neighbor_subgraph",
+        "lp_sampled_adapter_version": sampled_adapter_version,
     }
     for name in (
         "semantic_candidate_fingerprint", "semantic_feature_fingerprint",
@@ -1013,6 +1028,18 @@ def evaluate_lp_checkpoint(
         or bool(getattr(model, "requires_global_semantic_candidates", False))
     ):
         raise NotImplementedError(f"model={cfg.model.name} does not support sampled LP")
+    current_lp_context = getattr(model, "lp_sampled_context", None)
+    saved_lp_context = run_metadata.get("lp_sampled_context")
+    if saved_lp_context is not None and saved_lp_context != (
+        current_lp_context or "standard_link_neighbor_subgraph"
+    ):
+        raise ValueError("checkpoint sampled-LP adapter differs from the current model")
+    current_adapter_version = getattr(
+        model, "lp_sampled_adapter_version", "standard_link_neighbor_subgraph_v1"
+    )
+    saved_adapter_version = run_metadata.get("lp_sampled_adapter_version")
+    if saved_adapter_version is not None and saved_adapter_version != current_adapter_version:
+        raise ValueError("checkpoint sampled-LP adapter version differs from the current model")
     if bool(getattr(model, "requires_v7b_semantic_cache", False)):
         cache_path = cfg.semantic_graph.get("resolved_cache_path")
         if not cache_path:

@@ -34,15 +34,21 @@ class _RoleMAGBackbone(nn.Module):
 
 
 class Model(nn.Module):
-    supports_link_prediction = False
-
     """RoleMAG adapted to baseline's frozen-feature NC/LP model contract.
 
     baseline stores concatenated features as [text, visual]; RoleMAG's core
     consumes separate visual/text tensors, so this wrapper performs that
-    explicit split and leaves the task runners, splits, samplers, and metrics
-    unchanged.
+    explicit split. In sampled LP, its edge statistics and routing are local
+    to each LinkNeighborLoader subgraph; full-graph inference is used for
+    validation and final evaluation.
     """
+
+    supports_link_prediction = True
+    lp_sampled_context = (
+        "Role routing, edge features, and experts are computed on the current "
+        "LinkNeighborLoader subgraph during training; evaluation uses the full train graph."
+    )
+    lp_sampled_adapter_version = "sampled_subgraph_v1"
 
     def __init__(self, cfg, data_info: dict):
         super().__init__()
@@ -159,6 +165,15 @@ class Model(nn.Module):
         )
         z = backbone_h + self.role_residual_weight * role_h
         return z, None, None, aux_loss, {}
+
+    def forward_lp_sampled(self, x: torch.Tensor, edge_index: torch.Tensor):
+        """Encode one sampled LP graph, keeping routing local to its edges."""
+        if edge_index is None:
+            raise ValueError("rolemag sampled LP requires edge_index")
+        output = self.forward(x, edge_index)
+        if output[0].size(0) != x.size(0):
+            raise RuntimeError("rolemag sampled LP must return one embedding per sampled node")
+        return output
 
     @torch.no_grad()
     def inference(

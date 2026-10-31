@@ -1,0 +1,21 @@
+{
+  "recommendation": "One shared conservative LP configuration: original MRAGE hidden_dim256 model + existing LP task protocol.",
+  "validation_status": "not tuned or performance-validated on these two LP datasets",
+  "datasets": [
+    "sports-copurchase",
+    "cloth-copurchase"
+  ],
+  "training_seeds": [
+    42,
+    43,
+    44
+  ],
+  "device_for_example": "cuda:1",
+  "checkpoint_selection": "best Validation MRR",
+  "official_split": "each dataset provides one lp-edge-split.pt; shared across training seeds",
+  "source_files": {
+    "configs/model/mrage.yaml": "43fb53bc32d03c251bef4bf7a47257a51129b861e59b59230ad1199e85ad8365",
+    "configs/task/lp.yaml": "7c7d657ac983926be6f62f48d771b2c0ffe9b2bba708fa9bdf7708fe87a48f6c"
+  },
+  "training_started": false
+}

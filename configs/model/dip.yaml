@@ -15,9 +15,12 @@ dropout: 0.1
 norm: true
 fusion_type: path_integral
 
-# DiP pseudo nodes are global mediators in the paper. Keep training on the
-# complete message graph by default instead of NeighborLoader subgraphs.
+# DiP pseudo nodes are global mediators in the paper. NC training uses the
+# complete message graph. The sampled LP adapter updates them over each
+# LinkNeighborLoader subgraph during training, then over the full train graph
+# for validation and final testing.
 full_graph_training: true
+lp_sampled_adapter_version: sampled_subgraph_v1
 
 # null keeps the encoder output as concat([visual_state, text_state]), i.e. 2*q_dim.
 # Set to an integer, e.g. 128, to add the official LP-style output projection.

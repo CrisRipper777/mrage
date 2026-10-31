@@ -2,6 +2,10 @@ name: lgmrec
 
 # LGMRec (RecSys 2024), ported from 0901/OpenMAG.
 # Unified protocol: plain CE/BCE only; no modality InfoNCE auxiliary loss.
+# For sampled LP, hypergraph assignment and aggregation use each sampled
+# message subgraph during training; validation and final testing use the full
+# train graph.
+lp_sampled_adapter_version: sampled_subgraph_v1
 hidden_dim: 128
 num_layers: 3
 dropout: 0.2

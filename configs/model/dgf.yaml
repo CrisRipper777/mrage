@@ -1,6 +1,9 @@
 name: dgf
+lp_sampled_adapter_version: fixed_three_hop_v1
 
 # DGF filtering-core supervised adaptation (ported from 0901).
+# Its 10 filtering iterations run on the sampled subgraph; the LP sampler
+# remains at the shared three-hop [5,5,5] protocol.
 hidden_dim: 64
 alpha: 1.0
 beta: 1.0

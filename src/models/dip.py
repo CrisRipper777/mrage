@@ -288,7 +288,12 @@ class MultiModalNodePseudoSubsystem(nn.Module):
 
 
 class Model(nn.Module):
-    supports_link_prediction = False
+    supports_link_prediction = True
+    lp_sampled_context = (
+        "Learned pseudo-nodes aggregate over the current LinkNeighborLoader "
+        "subgraph during training; evaluation updates them over the full train graph."
+    )
+    lp_sampled_adapter_version = "sampled_subgraph_v1"
 
     def __init__(self, cfg, data_info: dict):
         super().__init__()
@@ -302,7 +307,10 @@ class Model(nn.Module):
         self.num_steps = int(cfg.model.get("mp_hops", cfg.model.get("num_layers", 3)))
         norm = bool(cfg.model.get("norm", True))
         fusion_type = str(cfg.model.get("fusion_type", "path_integral"))
-        self.requires_full_graph_training = bool(cfg.model.get("full_graph_training", True))
+        self.requires_full_graph_training = (
+            str(cfg.task.name).lower() == "nc"
+            and bool(cfg.model.get("full_graph_training", True))
+        )
 
         self.text_dim = int(data_info.get("text_dim", 0) or 0)
         self.visual_dim = int(data_info.get("visual_dim", 0) or 0)
@@ -410,6 +418,15 @@ class Model(nn.Module):
         z = self._encode(x, edge_index)
         aux_loss = z.new_tensor(0.0)
         return z, None, None, aux_loss, {}
+
+    def forward_lp_sampled(self, x: torch.Tensor, edge_index: torch.Tensor):
+        """Run pseudo-node aggregation over this sampled LP graph only."""
+        if edge_index is None:
+            raise ValueError("DiP sampled LP requires edge_index")
+        output = self.forward(x, edge_index)
+        if output[0].size(0) != x.size(0):
+            raise RuntimeError("DiP sampled LP must return one embedding per sampled node")
+        return output
 
     @torch.no_grad()
     def inference(

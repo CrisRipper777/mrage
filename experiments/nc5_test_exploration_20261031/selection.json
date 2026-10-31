@@ -1,0 +1,211 @@
+{
+  "test_used_for_selection": true,
+  "selection_metric": "mean Test Accuracy primary, mean Test Macro-F1 exact tie breaker; std reported",
+  "training_seeds": [
+    42,
+    43,
+    44
+  ],
+  "by_dataset": {
+    "Movies": "tuned256",
+    "Toys": "tuned128",
+    "Grocery": "tuned128",
+    "Reddit-S": "reddit_aux01",
+    "ele-fashion": "fashion_gate64"
+  },
+  "best_common": {
+    "candidate": "tuned128",
+    "mean_test_acc": 0.8022437532742819,
+    "mean_test_macro_f1": 0.7203269489276727
+  },
+  "common_comparison": [
+    {
+      "candidate": "default",
+      "mean_test_acc": 0.799759022394816,
+      "mean_test_macro_f1": 0.7165559330734659
+    },
+    {
+      "candidate": "tuned256",
+      "mean_test_acc": 0.8011596719423931,
+      "mean_test_macro_f1": 0.7205974012513574
+    },
+    {
+      "candidate": "tuned128",
+      "mean_test_acc": 0.8022437532742819,
+      "mean_test_macro_f1": 0.7203269489276727
+    }
+  ],
+  "dataset_comparison": [
+    {
+      "dataset": "Movies",
+      "selected_candidate": "tuned256",
+      "test_acc_gain_pp": 0.2598702907562256,
+      "test_macro_f1_gain_pp": 0.5857458396432758,
+      "selected": {
+        "candidate": "tuned256",
+        "dataset": "Movies",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.548625667889913,
+        "test_acc_std_ddof0": 0.005877538792664594,
+        "test_macro_f1_mean": 0.47600305260096576,
+        "test_macro_f1_std_ddof0": 0.006541204949378905,
+        "val_acc_mean": 0.5609878102938334,
+        "val_acc_std_ddof0": 0.0034402562002341843,
+        "val_macro_f1_mean": 0.4868822965886273,
+        "val_macro_f1_std_ddof0": 0.0019366417586414418
+      },
+      "default": {
+        "candidate": "default",
+        "dataset": "Movies",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.5460269649823507,
+        "test_acc_std_ddof0": 0.003453699359675403,
+        "test_macro_f1_mean": 0.470145594204533,
+        "test_macro_f1_std_ddof0": 0.013917667285386718,
+        "val_acc_mean": 0.5548890233039856,
+        "val_acc_std_ddof0": 0.0017142911996597854,
+        "val_macro_f1_mean": 0.4779904548280067,
+        "val_macro_f1_std_ddof0": 0.003535562647975977
+      }
+    },
+    {
+      "dataset": "Toys",
+      "selected_candidate": "tuned128",
+      "test_acc_gain_pp": 0.36240418752034875,
+      "test_macro_f1_gain_pp": 0.6198163579663407,
+      "selected": {
+        "candidate": "tuned128",
+        "dataset": "Toys",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.7902874946594238,
+        "test_acc_std_ddof0": 0.00388575368987713,
+        "test_macro_f1_mean": 0.762938202620579,
+        "test_macro_f1_std_ddof0": 0.004781684324189306,
+        "val_acc_mean": 0.8047837416330973,
+        "val_acc_std_ddof0": 0.0003416704519283143,
+        "val_macro_f1_mean": 0.774205441067036,
+        "val_macro_f1_std_ddof0": 0.0032149201915722255
+      },
+      "default": {
+        "candidate": "default",
+        "dataset": "Toys",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.7866634527842203,
+        "test_acc_std_ddof0": 0.0036534850857052902,
+        "test_macro_f1_mean": 0.7567400390409156,
+        "test_macro_f1_std_ddof0": 0.003763527007616513,
+        "val_acc_mean": 0.7999516725540161,
+        "val_acc_std_ddof0": 0.0007112662595090929,
+        "val_macro_f1_mean": 0.7693394587694918,
+        "val_macro_f1_std_ddof0": 0.003337988336847487
+      }
+    },
+    {
+      "dataset": "Grocery",
+      "selected_candidate": "tuned128",
+      "test_acc_gain_pp": 0.36115447680155066,
+      "test_macro_f1_gain_pp": -0.16860652497024953,
+      "selected": {
+        "candidate": "tuned128",
+        "dataset": "Grocery",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.8326012889544169,
+        "test_acc_std_ddof0": 0.0019472803995863785,
+        "test_macro_f1_mean": 0.7468507438638129,
+        "test_macro_f1_std_ddof0": 0.005111629070387127,
+        "val_acc_mean": 0.8334797422091166,
+        "val_acc_std_ddof0": 0.0007685564894028702,
+        "val_macro_f1_mean": 0.7538786246418088,
+        "val_macro_f1_std_ddof0": 0.009999904450583224
+      },
+      "default": {
+        "candidate": "default",
+        "dataset": "Grocery",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.8289897441864014,
+        "test_acc_std_ddof0": 0.0014345568249229538,
+        "test_macro_f1_mean": 0.7485368091135154,
+        "test_macro_f1_std_ddof0": 0.005226825331888594,
+        "val_acc_mean": 0.8362127939860026,
+        "val_acc_std_ddof0": 0.002556529394569488,
+        "val_macro_f1_mean": 0.7690083721343511,
+        "val_macro_f1_std_ddof0": 0.0063202036402137335
+      }
+    },
+    {
+      "dataset": "Reddit-S",
+      "selected_candidate": "reddit_aux01",
+      "test_acc_gain_pp": 0.15728274981181567,
+      "test_macro_f1_gain_pp": -0.7225787953230367,
+      "selected": {
+        "candidate": "reddit_aux01",
+        "dataset": "Reddit-S",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.9652930696805319,
+        "test_acc_std_ddof0": 0.0008256479016655503,
+        "test_macro_f1_mean": 0.9171076364819575,
+        "test_macro_f1_std_ddof0": 0.00459056623648854,
+        "val_acc_mean": 0.9637202421824137,
+        "val_acc_std_ddof0": 0.0012137649091068542,
+        "val_macro_f1_mean": 0.923521431276081,
+        "val_macro_f1_std_ddof0": 0.00449495528409455
+      },
+      "default": {
+        "candidate": "default",
+        "dataset": "Reddit-S",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.9637202421824137,
+        "test_acc_std_ddof0": 0.002585488858925363,
+        "test_macro_f1_mean": 0.9243334244351878,
+        "test_macro_f1_std_ddof0": 0.00786088212247488,
+        "val_acc_mean": 0.9616231520970663,
+        "val_acc_std_ddof0": 0.0009260634052490847,
+        "val_macro_f1_mean": 0.9275368612304876,
+        "val_macro_f1_std_ddof0": 0.004632006572633986
+      }
+    },
+    {
+      "dataset": "ele-fashion",
+      "selected_candidate": "fashion_gate64",
+      "test_acc_gain_pp": 0.2954880396525139,
+      "test_macro_f1_gain_pp": 0.6304866736908332,
+      "selected": {
+        "candidate": "fashion_gate64",
+        "dataset": "ele-fashion",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.8763495882352194,
+        "test_acc_std_ddof0": 0.0005075000773025693,
+        "test_macro_f1_mean": 0.6893286653100857,
+        "test_macro_f1_std_ddof0": 0.003113239490206493,
+        "val_acc_mean": 0.875933309396108,
+        "val_acc_std_ddof0": 0.00126098610571399,
+        "val_macro_f1_mean": 0.6817105302737674,
+        "val_macro_f1_std_ddof0": 0.003612896058560263
+      },
+      "default": {
+        "candidate": "default",
+        "dataset": "ele-fashion",
+        "n": 3,
+        "seeds": "42,43,44",
+        "test_acc_mean": 0.8733947078386942,
+        "test_acc_std_ddof0": 0.000706646961866474,
+        "test_macro_f1_mean": 0.6830237985731774,
+        "test_macro_f1_std_ddof0": 0.0032898567883265207,
+        "val_acc_mean": 0.8735467791557312,
+        "val_acc_std_ddof0": 0.0005369105939787335,
+        "val_macro_f1_mean": 0.6775014195233838,
+        "val_macro_f1_std_ddof0": 0.004536241149507551
+      }
+    }
+  ],
+  "at_unix": 1793430105.902587
+}

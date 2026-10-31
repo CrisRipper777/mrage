@@ -1,0 +1,8 @@
+{
+  "changed_at": "2026-10-31T01:14:11.058285",
+  "reason": "owner reserved GPU0 after current trial",
+  "remaining_training_device": "cuda:1",
+  "remaining_final_test_device": "cuda:1",
+  "gpu0_last_trial": "a13_expert_eta_0p2/Reddit-S/seed43",
+  "gpu0_last_trial_completed": true
+}

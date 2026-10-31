@@ -1,0 +1,184 @@
+{
+  "runs": [
+    {
+      "candidate": "baseline",
+      "dataset": "Movies",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24813496100250632
+    },
+    {
+      "candidate": "baseline",
+      "dataset": "Toys",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.26258798200433375
+    },
+    {
+      "candidate": "baseline",
+      "dataset": "Grocery",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.25793368999438826
+    },
+    {
+      "candidate": "baseline",
+      "dataset": "ele-fashion",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.2446417930041207
+    },
+    {
+      "candidate": "baseline",
+      "dataset": "Reddit-S",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24824296299630078
+    },
+    {
+      "candidate": "lr3e4",
+      "dataset": "Movies",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.25210245899506845
+    },
+    {
+      "candidate": "lr3e4",
+      "dataset": "Toys",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24314713400235632
+    },
+    {
+      "candidate": "lr3e4",
+      "dataset": "Grocery",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24660266199498437
+    },
+    {
+      "candidate": "lr3e4",
+      "dataset": "ele-fashion",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.2591221469992888
+    },
+    {
+      "candidate": "lr3e4",
+      "dataset": "Reddit-S",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.25675240300188307
+    },
+    {
+      "candidate": "h512_lr3e4",
+      "dataset": "Movies",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.26019369400455616
+    },
+    {
+      "candidate": "h512_lr3e4",
+      "dataset": "Toys",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24961054399318527
+    },
+    {
+      "candidate": "h512_lr3e4",
+      "dataset": "Grocery",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24964107800042257
+    },
+    {
+      "candidate": "h512_lr3e4",
+      "dataset": "ele-fashion",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.245882151000842
+    },
+    {
+      "candidate": "h512_lr3e4",
+      "dataset": "Reddit-S",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.25635802000033436
+    },
+    {
+      "candidate": "h512_lr1e3",
+      "dataset": "Movies",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.24444311199476942
+    },
+    {
+      "candidate": "h512_lr1e3",
+      "dataset": "Toys",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.2571473159987363
+    },
+    {
+      "candidate": "h512_lr1e3",
+      "dataset": "Grocery",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.2585781189991394
+    },
+    {
+      "candidate": "h512_lr1e3",
+      "dataset": "ele-fashion",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.26082024900097167
+    },
+    {
+      "candidate": "h512_lr1e3",
+      "dataset": "Reddit-S",
+      "error": "runner did not produce status.json",
+      "phase": "validation",
+      "seed": 42,
+      "status": "failed",
+      "wall_seconds": 0.25189037100062706
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "at_utc": "2026-10-30T17:21:44.610205+00:00",
+  "compile": [
+    "scripts/tune_nc5.py",
+    "scripts/coordinate_tune_nc5.py",
+    "experiments/nc5_tuning_20261030/summarize.py"
+  ],
+  "device_mapping_mock_cases": {
+    "saved_cuda0_to_physical_gpu1": "passed; CUDA_VISIBLE_DEVICES=1",
+    "saved_cuda1_to_physical_gpu1": "passed; native cuda:1"
+  },
+  "mrage_core_model_nc_task_runner_unchanged_from_study_start": true,
+  "original_config_path": "configs/model/mrage.yaml"
+}

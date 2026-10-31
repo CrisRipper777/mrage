@@ -1,0 +1,213 @@
+{
+  "record_role": "current_user_adopted_configuration_and_result_sources",
+  "recorded_at": "2026-10-31T15:25:51.421748+08:00",
+  "decision": "User explicitly adopts prior Movies default run 2026-10-31/13-05-49; other four datasets retain previous selected configurations.",
+  "search_ranking_file": "selection.json",
+  "movies_source_replaces_search_run": true,
+  "historical_and_search_cohorts_not_pooled": true,
+  "new_training_performed": false,
+  "by_dataset": {
+    "Movies": {
+      "configuration": "default",
+      "configuration_file": "/hdd1/DataInHere/YHF/mrage/experiments/nc5_test_exploration_20261031/adopted/Movies.yaml",
+      "training_seeds": [
+        42,
+        43,
+        44
+      ],
+      "n": 3,
+      "source_type": "user_provided_historical_direct_run",
+      "source_directory": "/hdd1/DataInHere/YHF/mrage/outputs/2026-10-31/13-05-49",
+      "archived_source_directory": "/hdd1/DataInHere/YHF/mrage/experiments/nc5_test_exploration_20261031/adopted/sources/Movies_default_20261031_130549",
+      "metrics_source": "/hdd1/DataInHere/YHF/mrage/outputs/2026-10-31/13-05-49/results.json",
+      "metrics": {
+        "val_acc": {
+          "mean": 0.5559887886047363,
+          "std": 0.00296252198967385
+        },
+        "val_macro_f1": {
+          "mean": 0.4800094550863661,
+          "std": 0.004301919463386482
+        },
+        "test_acc": {
+          "mean": 0.5504247943560282,
+          "std": 0.0021943499062140855
+        },
+        "test_macro_f1": {
+          "mean": 0.47948403590009203,
+          "std": 0.003009184508816002
+        }
+      },
+      "checkpoint_available": false,
+      "checkpoint_note": "Original run has save_ckpt_path=null; no saved model weights. Original results/config/logs archived; no retraining performed.",
+      "supersedes_search_candidate": "tuned256",
+      "source_file_sha256": {
+        "results.json": "cedec3bab30e17a0595205bc8084594c516ca15b343860a9861f30560f02b6c7",
+        "main.log": "ed075762577efa13bba24be58723357ddd2c7ec9af81229ff9bfa71f1dc6222e",
+        ".hydra/config.yaml": "ce302571a68e19fc4910c8f70283b68296fdf11daaaeec4abfb7ce8e1a102a5f",
+        ".hydra/overrides.yaml": "fa226ff506e466508c731f3aa3f7633a067eba035b7dd17f4cbe0ccb5d7cec7f",
+        ".hydra/hydra.yaml": "19c45afca2b97e23aa026d795269621dac3a552ae95aa4e390645a4e7e0b07dc"
+      }
+    },
+    "Toys": {
+      "configuration": "tuned128",
+      "configuration_file": "/hdd1/DataInHere/YHF/mrage/experiments/nc5_test_exploration_20261031/adopted/Toys.yaml",
+      "training_seeds": [
+        42,
+        43,
+        44
+      ],
+      "n": 3,
+      "source_type": "test_guided_exploration_three_seed_selection",
+      "source_directories": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-42",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-43",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-44"
+      ],
+      "metrics_sources": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-42/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-43/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-44/final_test_metrics.json"
+      ],
+      "metrics": {
+        "val_acc": {
+          "mean": 0.8047837416330973,
+          "std": 0.0003416704519283143
+        },
+        "val_macro_f1": {
+          "mean": 0.774205441067036,
+          "std": 0.0032149201915722255
+        },
+        "test_acc": {
+          "mean": 0.7902874946594238,
+          "std": 0.00388575368987713
+        },
+        "test_macro_f1": {
+          "mean": 0.762938202620579,
+          "std": 0.004781684324189306
+        }
+      },
+      "checkpoint_available": true
+    },
+    "Grocery": {
+      "configuration": "tuned128",
+      "configuration_file": "/hdd1/DataInHere/YHF/mrage/experiments/nc5_test_exploration_20261031/adopted/Grocery.yaml",
+      "training_seeds": [
+        42,
+        43,
+        44
+      ],
+      "n": 3,
+      "source_type": "test_guided_exploration_three_seed_selection",
+      "source_directories": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-42",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-43",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-44"
+      ],
+      "metrics_sources": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-42/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-43/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-44/final_test_metrics.json"
+      ],
+      "metrics": {
+        "val_acc": {
+          "mean": 0.8334797422091166,
+          "std": 0.0007685564894028702
+        },
+        "val_macro_f1": {
+          "mean": 0.7538786246418088,
+          "std": 0.009999904450583224
+        },
+        "test_acc": {
+          "mean": 0.8326012889544169,
+          "std": 0.0019472803995863785
+        },
+        "test_macro_f1": {
+          "mean": 0.7468507438638129,
+          "std": 0.005111629070387127
+        }
+      },
+      "checkpoint_available": true
+    },
+    "ele-fashion": {
+      "configuration": "fashion_gate64",
+      "configuration_file": "/hdd1/DataInHere/YHF/mrage/experiments/nc5_test_exploration_20261031/adopted/ele-fashion.yaml",
+      "training_seeds": [
+        42,
+        43,
+        44
+      ],
+      "n": 3,
+      "source_type": "test_guided_exploration_three_seed_selection",
+      "source_directories": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-42",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-43",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-44"
+      ],
+      "metrics_sources": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-42/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-43/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-44/final_test_metrics.json"
+      ],
+      "metrics": {
+        "val_acc": {
+          "mean": 0.875933309396108,
+          "std": 0.00126098610571399
+        },
+        "val_macro_f1": {
+          "mean": 0.6817105302737674,
+          "std": 0.003612896058560263
+        },
+        "test_acc": {
+          "mean": 0.8763495882352194,
+          "std": 0.0005075000773025693
+        },
+        "test_macro_f1": {
+          "mean": 0.6893286653100857,
+          "std": 0.003113239490206493
+        }
+      },
+      "checkpoint_available": true
+    },
+    "Reddit-S": {
+      "configuration": "reddit_aux01",
+      "configuration_file": "/hdd1/DataInHere/YHF/mrage/experiments/nc5_test_exploration_20261031/adopted/Reddit-S.yaml",
+      "training_seeds": [
+        42,
+        43,
+        44
+      ],
+      "n": 3,
+      "source_type": "test_guided_exploration_three_seed_selection",
+      "source_directories": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-42",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-43",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-44"
+      ],
+      "metrics_sources": [
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-42/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-43/final_test_metrics.json",
+        "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-44/final_test_metrics.json"
+      ],
+      "metrics": {
+        "val_acc": {
+          "mean": 0.9637202421824137,
+          "std": 0.0012137649091068542
+        },
+        "val_macro_f1": {
+          "mean": 0.923521431276081,
+          "std": 0.00449495528409455
+        },
+        "test_acc": {
+          "mean": 0.9652930696805319,
+          "std": 0.0008256479016655503
+        },
+        "test_macro_f1": {
+          "mean": 0.9171076364819575,
+          "std": 0.00459056623648854
+        }
+      },
+      "checkpoint_available": true
+    }
+  }
+}

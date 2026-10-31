@@ -1,4 +1,5 @@
 name: rolemag
+lp_sampled_adapter_version: sampled_subgraph_v1
 
 # RoleMAG encoder dimensions.
 hidden_dim: 256

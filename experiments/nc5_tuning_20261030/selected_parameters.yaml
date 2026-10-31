@@ -1,0 +1,31 @@
+task:
+  optimizer: adamw
+  lr: 0.001
+  weight_decay: 1.0e-05
+  epochs: 300
+  patience: 30
+  early_stop_min_epoch: 30
+  early_stop_min_delta: 0.0001
+  grad_clip: 1.0
+  scheduler: null
+model:
+  hidden_dim: 128
+  dropout: 0.3
+  late_cross_dropout: 0.15
+  fusion_dropout: 0.2
+  gamma_init: 0.16
+  beta_init: 0.05
+  rho_init: 0.25
+  router_hidden_dim: 256
+  attention_dim: 32
+  router_embed_dim: 8
+  channel_gate_hidden: 128
+  nc_unimodal_weight: 0.3
+  balance_weight: 0.01
+  expert_bottleneck: 64
+  expert_eta: 0.2
+  num_experts: 4
+  top_k: 2
+  physical_hops: 3
+  semantic_hops: 1
+  semantic_knn_k: 8

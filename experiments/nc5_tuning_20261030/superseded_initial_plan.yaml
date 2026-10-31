@@ -1,0 +1,28 @@
+study_id: nc5_tuning_20261030
+datasets: [Movies, Toys, Grocery, ele-fashion, Reddit-S]
+selection_metric: mean_validation_accuracy
+selection_note: Prefer one shared configuration; allow ele-fashion a separate configuration if three-seed validation supports it.
+fashion_exception_min_gain_pp: 0.5
+fashion_exception_min_seed_wins: 2
+common_overrides: {}
+candidates:
+  baseline:
+    description: Current MRAGE and NC task defaults.
+    overrides: {}
+  lr3e4:
+    description: Hidden 256 with a lower learning rate.
+    overrides:
+      task:
+        lr: 0.0003
+  h512_lr3e4:
+    description: Hidden 512 with learning rate 0.0003.
+    overrides:
+      model:
+        hidden_dim: 512
+      task:
+        lr: 0.0003
+  h512_lr1e3:
+    description: Hidden 512 with the default learning rate.
+    overrides:
+      model:
+        hidden_dim: 512

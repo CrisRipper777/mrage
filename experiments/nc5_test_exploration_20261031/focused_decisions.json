@@ -1,0 +1,92 @@
+[
+  {
+    "dataset": "Movies",
+    "candidate": "movies_gamma016",
+    "screen_test_acc": 0.5430284738540649,
+    "screen_test_macro_f1": 0.46599426848230785,
+    "candidates": [
+      {
+        "candidate": "movies_gamma016",
+        "test_acc": 0.5430284738540649,
+        "test_macro_f1": 0.46599426848230785
+      },
+      {
+        "candidate": "movies_balanced",
+        "test_acc": 0.530434787273407,
+        "test_macro_f1": 0.46556467898439136
+      }
+    ]
+  },
+  {
+    "dataset": "Toys",
+    "candidate": "toys_aux01",
+    "screen_test_acc": 0.7859386205673218,
+    "screen_test_macro_f1": 0.7586055498303825,
+    "candidates": [
+      {
+        "candidate": "toys_aux01",
+        "test_acc": 0.7859386205673218,
+        "test_macro_f1": 0.7586055498303825
+      },
+      {
+        "candidate": "toys_aux05",
+        "test_acc": 0.7849721908569336,
+        "test_macro_f1": 0.7589931992329578
+      }
+    ]
+  },
+  {
+    "dataset": "Grocery",
+    "candidate": "grocery_lr3e4",
+    "screen_test_acc": 0.8345534205436707,
+    "screen_test_macro_f1": 0.7538161614362661,
+    "candidates": [
+      {
+        "candidate": "grocery_wd1e5",
+        "test_acc": 0.8307467103004456,
+        "test_macro_f1": 0.7584714683411754
+      },
+      {
+        "candidate": "grocery_lr3e4",
+        "test_acc": 0.8345534205436707,
+        "test_macro_f1": 0.7538161614362661
+      }
+    ]
+  },
+  {
+    "dataset": "Reddit-S",
+    "candidate": "reddit_aux01",
+    "screen_test_acc": 0.9641396403312683,
+    "screen_test_macro_f1": 0.9106366294986497,
+    "candidates": [
+      {
+        "candidate": "reddit_dropout02",
+        "test_acc": 0.9616231322288513,
+        "test_macro_f1": 0.9090826168421378
+      },
+      {
+        "candidate": "reddit_aux01",
+        "test_acc": 0.9641396403312683,
+        "test_macro_f1": 0.9106366294986497
+      }
+    ]
+  },
+  {
+    "dataset": "ele-fashion",
+    "candidate": "fashion_gate64",
+    "screen_test_acc": 0.8762359619140625,
+    "screen_test_macro_f1": 0.6876605389079424,
+    "candidates": [
+      {
+        "candidate": "fashion_gate64",
+        "test_acc": 0.8762359619140625,
+        "test_macro_f1": 0.6876605389079424
+      },
+      {
+        "candidate": "fashion_balanced",
+        "test_acc": 0.8736788034439087,
+        "test_macro_f1": 0.6983761971426654
+      }
+    ]
+  }
+]

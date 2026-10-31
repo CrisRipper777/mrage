@@ -9,11 +9,6 @@ from torch_geometric.utils import add_self_loops, coalesce, degree, to_undirecte
 
 
 class Model(nn.Module):
-    supports_link_prediction = True
-    # DGF applies ten consecutive node-domain filter terms. Sample every
-    # corresponding graph hop so its sampled-LP receptive field is explicit.
-    requires_full_lp_sampler_depth = True
-
     """DGF filtering-core supervised adaptation (reference: OpenMAG DGF.py).
 
     Keeps the dual graph filtering core: L2-normalized per-modality
@@ -26,6 +21,13 @@ class Model(nn.Module):
     included — this adaptation uses the unified supervised CE protocol
     (RPTA baseline_adaptations.md: DGF filtering-core supervised adaptation).
     """
+
+    supports_link_prediction = True
+    lp_sampled_context = (
+        "Ten DGF filter iterations run over the shared three-hop "
+        "LinkNeighborLoader subgraph; they do not expand sampler depth."
+    )
+    lp_sampled_adapter_version = "fixed_three_hop_v1"
 
     def __init__(self, cfg, data_info):
         super().__init__()
@@ -40,7 +42,12 @@ class Model(nn.Module):
         self.hidden_dim = int(cfg.model.hidden_dim)
         self.alpha = float(cfg.model.get("alpha", 1.0))
         self.beta = float(cfg.model.get("beta", 1.0))
+        # These are recurrent filter iterations over the sampled graph. They
+        # do not increase LinkNeighborLoader's fixed three-hop fanout.
         self.num_layers = int(cfg.model.get("num_layers", 10))
+        self.lp_sampled_adapter_version = str(
+            cfg.model.get("lp_sampled_adapter_version", "fixed_three_hop_v1")
+        )
         # Official core: no activation, no dropout, no norm layers — L2 only.
         self.linear1 = nn.Linear(text_dim, self.hidden_dim)  # text
         self.linear2 = nn.Linear(visual_dim, self.hidden_dim)  # image

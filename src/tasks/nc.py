@@ -502,6 +502,9 @@ def evaluate_nc_checkpoint(
     }
     if checkpoint.get("data_info") != data_info:
         raise ValueError("checkpoint data dimensions differ from the loaded NC dataset")
+    # Reproduce fixed, non-parameter initialization for legacy checkpoints
+    # whose model_state predates MMGCN's registered id_embedding buffer.
+    set_seed(int(cfg.seed))
     model = build_model(cfg, data_info)
     if bool(getattr(model, "requires_global_semantic_candidates", False)):
         cache_path = cfg.semantic_graph.get("resolved_cache_path")
@@ -525,7 +528,17 @@ def evaluate_nc_checkpoint(
                 raise ValueError(f"checkpoint semantic graph identity differs for {key}")
     model = model.to(device)
     classifier = nn.Linear(model.out_dim, int(data.num_classes)).to(device)
-    load_state_dict_cpu(model, checkpoint["model_state"])
+    model_state = checkpoint["model_state"]
+    if str(cfg.model.name).lower() == "mmgcn" and "id_embedding" not in model_state:
+        incompatible = model.load_state_dict(model_state, strict=False)
+        if set(incompatible.missing_keys) != {"id_embedding"} or incompatible.unexpected_keys:
+            raise RuntimeError(
+                "legacy MMGCN checkpoint is missing unexpected model state: "
+                f"missing={incompatible.missing_keys}, unexpected={incompatible.unexpected_keys}"
+            )
+        logger.info("Restored legacy MMGCN fixed id_embedding deterministically from seed %d", int(cfg.seed))
+    else:
+        load_state_dict_cpu(model, model_state)
     load_state_dict_cpu(classifier, checkpoint["head_state"])
 
     eval_labels = _resolve_nc_eval_labels(

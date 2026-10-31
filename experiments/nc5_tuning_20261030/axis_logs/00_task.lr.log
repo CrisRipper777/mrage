@@ -1,0 +1,10 @@
+{"command": ["/home/m3/miniconda3/envs/yhf_env/bin/python", "scripts/tune_nc5.py", "--study-dir", "/hdd1/DataInHere/YHF/mrage/experiments/nc5_tuning_20261030", "--devices", "cuda:0", "cuda:1", "--candidates", "baseline", "lr6e4", "lr3e4", "--datasets", "ele-fashion", "Movies", "Grocery", "--seeds", "42"], "at_unix": 1793374097.11928}
+SKIP ('baseline', 'ele-fashion', 42, 'validation')
+SKIP ('baseline', 'Movies', 42, 'validation')
+SKIP ('baseline', 'Grocery', 42, 'validation')
+SKIP ('lr6e4', 'ele-fashion', 42, 'validation')
+SKIP ('lr6e4', 'Movies', 42, 'validation')
+SKIP ('lr6e4', 'Grocery', 42, 'validation')
+SKIP ('lr3e4', 'ele-fashion', 42, 'validation')
+SKIP ('lr3e4', 'Movies', 42, 'validation')
+SKIP ('lr3e4', 'Grocery', 42, 'validation')

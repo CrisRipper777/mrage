@@ -1,0 +1,21 @@
+candidate,dataset,seed,phase,status,val_acc,val_macro_f1,test_acc,test_macro_f1,best_epoch,wall_seconds,model_parameters,config_hash,split_id,run_dir,error
+baseline,Movies,42,validation,failed,,,,,,0.24813496100250632,,,,,runner did not produce status.json
+baseline,Toys,42,validation,failed,,,,,,0.26258798200433375,,,,,runner did not produce status.json
+baseline,Grocery,42,validation,failed,,,,,,0.25793368999438826,,,,,runner did not produce status.json
+baseline,ele-fashion,42,validation,failed,,,,,,0.2446417930041207,,,,,runner did not produce status.json
+baseline,Reddit-S,42,validation,failed,,,,,,0.24824296299630078,,,,,runner did not produce status.json
+lr3e4,Movies,42,validation,failed,,,,,,0.25210245899506845,,,,,runner did not produce status.json
+lr3e4,Toys,42,validation,failed,,,,,,0.24314713400235632,,,,,runner did not produce status.json
+lr3e4,Grocery,42,validation,failed,,,,,,0.24660266199498437,,,,,runner did not produce status.json
+lr3e4,ele-fashion,42,validation,failed,,,,,,0.2591221469992888,,,,,runner did not produce status.json
+lr3e4,Reddit-S,42,validation,failed,,,,,,0.25675240300188307,,,,,runner did not produce status.json
+h512_lr3e4,Movies,42,validation,failed,,,,,,0.26019369400455616,,,,,runner did not produce status.json
+h512_lr3e4,Toys,42,validation,failed,,,,,,0.24961054399318527,,,,,runner did not produce status.json
+h512_lr3e4,Grocery,42,validation,failed,,,,,,0.24964107800042257,,,,,runner did not produce status.json
+h512_lr3e4,ele-fashion,42,validation,failed,,,,,,0.245882151000842,,,,,runner did not produce status.json
+h512_lr3e4,Reddit-S,42,validation,failed,,,,,,0.25635802000033436,,,,,runner did not produce status.json
+h512_lr1e3,Movies,42,validation,failed,,,,,,0.24444311199476942,,,,,runner did not produce status.json
+h512_lr1e3,Toys,42,validation,failed,,,,,,0.2571473159987363,,,,,runner did not produce status.json
+h512_lr1e3,Grocery,42,validation,failed,,,,,,0.2585781189991394,,,,,runner did not produce status.json
+h512_lr1e3,ele-fashion,42,validation,failed,,,,,,0.26082024900097167,,,,,runner did not produce status.json
+h512_lr1e3,Reddit-S,42,validation,failed,,,,,,0.25189037100062706,,,,,runner did not produce status.json

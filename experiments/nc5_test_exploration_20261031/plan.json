@@ -1,0 +1,65 @@
+{
+  "study_id": "nc5_test_exploration_20261031",
+  "created_at_unix": 1793424751.9417832,
+  "device": "cuda:1",
+  "datasets": [
+    "Movies",
+    "Toys",
+    "Grocery",
+    "Reddit-S",
+    "ele-fashion"
+  ],
+  "training_seeds": [
+    42,
+    43,
+    44
+  ],
+  "split_seed": 42,
+  "selection": "mean Test Accuracy primary, mean Test Macro-F1 exact tie breaker; std reported",
+  "test_used_for_hyperparameter_selection": true,
+  "checkpoint_selection": "best Validation Accuracy, unchanged",
+  "global_candidates": [
+    "default",
+    "tuned256",
+    "tuned128"
+  ],
+  "focused_candidates": {
+    "Movies": [
+      "movies_gamma016",
+      "movies_balanced"
+    ],
+    "Toys": [
+      "toys_aux01",
+      "toys_aux05"
+    ],
+    "Grocery": [
+      "grocery_wd1e5",
+      "grocery_lr3e4"
+    ],
+    "Reddit-S": [
+      "reddit_dropout02",
+      "reddit_aux01"
+    ],
+    "ele-fashion": [
+      "fashion_gate64",
+      "fashion_balanced"
+    ]
+  },
+  "maximum_training_runs": 65,
+  "plan": "45 global runs; 10 focused seed42 runs; 10 further seeds43/44 for each dataset focused winner",
+  "focused_confirmation": "highest seed42 Test Accuracy; Macro-F1 breaks exact ties",
+  "original_mrage_sha256": "43fb53bc32d03c251bef4bf7a47257a51129b861e59b59230ad1199e85ad8365",
+  "source_commit": "13ff58d708a9f0d007df6fe7b7b4e6caf8d329ea",
+  "reasons": {
+    "movies_gamma016": "Prior Movies representative validation leader, without the stronger beta reduction or eta increase.",
+    "movies_balanced": "Observed class imbalance and seed-sensitive majority recall; test existing Train-only balanced CE.",
+    "grocery_wd1e5": "Prior Grocery best/tied Validation Accuracy and improved Macro-F1.",
+    "grocery_lr3e4": "Prior Grocery best/tied Validation Accuracy with default model.",
+    "toys_aux01": "Previous search did not sweep Toys auxiliaries; vary only unimodal loss around the stronger 128-dim anchor.",
+    "toys_aux05": "Same targeted auxiliary comparison, opposite direction.",
+    "reddit_dropout02": "Smaller representation may need less regularization; single dropout change from 128 anchor.",
+    "reddit_aux01": "Check whether weaker auxiliary supervision benefits the already accurate Reddit anchor.",
+    "fashion_gate64": "Prior ele-fashion strongest seed42 Validation Accuracy candidate.",
+    "fashion_balanced": "Diagnosis found low recall of class1/11; use existing Train-only class-balanced main CE."
+  }
+}
