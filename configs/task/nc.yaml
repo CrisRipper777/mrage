@@ -1,5 +1,7 @@
 name: nc
-protocol_version: unified_full_graph_nc_v1
+protocol_version: unified_full_graph_nc_method_objectives_v3
+# Validation-selected DMGC native cross-modal loss weight for NC.
+dmgc_lambda_cm: 0.3
 
 training_mode: full_graph # full_graph | sampled; unified protocol fixes full_graph
 optimizer: adamw # adamw | adam
@@ -30,7 +32,7 @@ loss:
   class_balanced_main_ce: false
 
 evaluate_test: true
-macro_f1_labels: all_classes
+macro_f1_labels: ${oc.select:dataset.nc_macro_f1_labels,all_classes}
 phase: train # train | final_test (paper benchmark runner)
 mask_test_labels: false
 checkpoint_path: null

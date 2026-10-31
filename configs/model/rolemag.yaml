@@ -23,14 +23,16 @@ role_prior_strength: 0.2
 beta_floor: 0.5
 beta_cap: 12.0
 
-# Keep the baseline's common supervised objective by default. Optional
-# RoleMAG-specific routing/QCA regularizers can be enabled explicitly.
-lambda_evi: 0.0
-out_edge_ratio: 0.0
+# RoleMAG paper objectives: evidential routing, role balance, and QCA.
+lambda_evi: 0.1
+out_edge_ratio: 0.05
 eta_kl: 1.0
-lambda_bal: 0.0
-lambda_qca: 0.0
+lambda_bal: 0.1
+lambda_qca: 0.5
+qca_max_nodes: 1024
 tau: 0.07
+# These implementation extensions are disabled; the comparison uses the
+# paper's three stated auxiliary objectives only.
 lambda_role_entropy: 0.0
 lambda_gate_entropy: 0.0
 lambda_u_center: 0.0

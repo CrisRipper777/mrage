@@ -145,6 +145,21 @@ def _evaluate_split(
     }
 
 
+def _format_auxiliary_losses(info: dict | None) -> str:
+    if not isinstance(info, dict):
+        return ""
+    values = []
+    for group, parts in info.items():
+        if not isinstance(parts, dict):
+            continue
+        for name, value in parts.items():
+            if torch.is_tensor(value) and value.numel() == 1:
+                value = float(value.detach().item())
+            if isinstance(value, (int, float)):
+                values.append(f"{group}.{name}={float(value):.4f}")
+    return " | Aux " + ", ".join(values) if values else ""
+
+
 def _checkpoint_path_for_run(path_like: str | Path, cfg, run_id: int) -> Path:
     path = Path(str(path_like)).expanduser()
     if int(cfg.num_runs) > 1:
@@ -203,6 +218,8 @@ def _run_single_nc(
     x_all, y_all = data.x.to(device), data.y.to(device)
     edge_index_all = data.edge_index.to(device) if uses_graph else None
     train_idx_all = data.train_idx.to(device)
+    train_mask_all = torch.zeros(data.num_nodes, dtype=torch.bool, device=device)
+    train_mask_all[train_idx_all] = True
     class_balanced = bool(cfg.task.loss.get("class_balanced_main_ce", False))
     class_weights = _training_class_weights(
         y_all, train_idx_all, int(data.num_classes), enabled=class_balanced
@@ -241,7 +258,58 @@ def _run_single_nc(
     for epoch in range(1, int(cfg.task.epochs) + 1):
         model.train()
         classifier.train()
-        if full_graph_training:
+        info = {}
+        if full_graph_training and bool(getattr(model, "supports_nc_node_batches", False)):
+            node_batch_size = int(getattr(model, "node_batch_size", cfg.task.batch_size))
+            batch_scope = str(getattr(model, "nc_auxiliary_scope", "train_nodes"))
+            if batch_scope not in {"train_nodes", "all_nodes"}:
+                raise ValueError(f"Unsupported node-batch scope: {batch_scope}")
+            batch_nodes = (
+                torch.arange(data.num_nodes, dtype=torch.long)
+                if batch_scope == "all_nodes"
+                else train_idx_all.detach().cpu()
+            )
+            train_loader = TorchDataLoader(
+                batch_nodes,
+                batch_size=max(node_batch_size, 1),
+                shuffle=True,
+            )
+            optimizer.zero_grad(set_to_none=True)
+            total_examples = int(train_idx_all.numel())
+            total_batch_nodes = int(batch_nodes.numel())
+            train_loss = 0.0
+            for batch_idx in train_loader:
+                batch_idx = batch_idx.to(device)
+                z, _, _, aux_loss, info = model.forward_node_batch(
+                    x_all, edge_index_all, batch_idx
+                )
+                logits = classifier(z)
+                batch_train_mask = train_mask_all[batch_idx]
+                if bool(batch_train_mask.any()):
+                    main_ce = nn.functional.cross_entropy(
+                        logits[batch_train_mask],
+                        y_all[batch_idx[batch_train_mask]],
+                        weight=class_weights,
+                    )
+                    task_scale = float(batch_train_mask.sum().item()) / max(total_examples, 1)
+                else:
+                    main_ce = logits.new_tensor(0.0)
+                    task_scale = 0.0
+                extra_native_loss = model.additional_nc_loss(classifier, info)
+                auxiliary_scale = float(batch_idx.numel()) / max(total_batch_nodes, 1)
+                loss = (
+                    main_ce * task_scale
+                    + aux_weight * (aux_loss + extra_native_loss) * auxiliary_scale
+                )
+                loss.backward()
+                train_loss += float(loss.detach().item())
+            torch.nn.utils.clip_grad_norm_(
+                list(model.parameters()) + list(classifier.parameters()),
+                max_norm=grad_clip,
+                error_if_nonfinite=True,
+            )
+            optimizer.step()
+        elif full_graph_training:
             if hasattr(model, "_batch_n_id"):
                 model._batch_n_id = None
             optimizer.zero_grad(set_to_none=True)
@@ -273,7 +341,7 @@ def _run_single_nc(
                 batch_idx = batch_idx.to(device)
                 labels = y_all[batch_idx]
                 optimizer.zero_grad(set_to_none=True)
-                z, _, _, aux_loss, _ = model(x_all[batch_idx], None)
+                z, _, _, aux_loss, info = model(x_all[batch_idx], None)
                 logits = classifier(z)
                 loss = nn.functional.cross_entropy(logits, labels, weight=class_weights) + aux_weight * aux_loss
                 loss.backward()
@@ -287,8 +355,9 @@ def _run_single_nc(
             train_loss = total_loss / max(total_examples, 1)
 
         scheduler_step(cfg, optimizer, epoch, int(cfg.task.epochs))
+        aux_text = _format_auxiliary_losses(info)
         if epoch % eval_every != 0:
-            logger.info("Epoch %05d | Train Loss %.4f", epoch, train_loss)
+            logger.info("Epoch %05d | Train Loss %.4f%s", epoch, train_loss, aux_text)
             continue
         z = infer_all_embeddings(
             model, data, device, uses_graph, inference_batch_size, inference_mode
@@ -297,8 +366,8 @@ def _run_single_nc(
             classifier, z, data.y, data.val_idx, device, inference_batch_size, eval_labels
         )
         logger.info(
-            "Epoch %05d | Train Loss %.4f | Val Acc %.2f | Val Macro-F1 %.2f",
-            epoch, train_loss, format_pct(val_metrics["acc"]), format_pct(val_metrics["macro_f1"]),
+            "Epoch %05d | Train Loss %.4f%s | Val Acc %.2f | Val Macro-F1 %.2f",
+            epoch, train_loss, aux_text, format_pct(val_metrics["acc"]), format_pct(val_metrics["macro_f1"]),
         )
         improved = val_metrics["acc"] > best_val + min_delta
         stop_early = False
@@ -343,6 +412,9 @@ def _run_single_nc(
         "split_sha256": data.info.get("nc_split_sha256", data.info.get("node_split_sha256")),
         "split_seed": data.info.get("nc_split_seed"),
     }
+    nc_adapter = getattr(model, "nc_training_adapter_version", None)
+    if nc_adapter is not None:
+        run_metadata["nc_training_adapter_version"] = str(nc_adapter)
     for name in (
         "semantic_candidate_fingerprint", "semantic_feature_fingerprint",
         "semantic_graph_identity_fingerprint", "semantic_v7b_fingerprint",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared launcher for the fixed non-MRAGE baseline benchmark matrices."""
+"""Shared launcher for the fixed benchmark matrices."""
 
 from __future__ import annotations
 
@@ -23,8 +23,10 @@ BASELINE_MODELS = (
     "dmgc",
     "rolemag",
     "lgmrec",
+    "graphmore",
+    "ntsformer",
 )
-LP_SUPPORTED_MODELS = BASELINE_MODELS
+LP_SUPPORTED_MODELS = tuple(model for model in BASELINE_MODELS if model != "ntsformer")
 SEEDS = (42, 43, 44)
 
 
@@ -37,9 +39,12 @@ def _write_json_atomic(path: Path, payload: dict) -> None:
     temporary.replace(path)
 
 
-def _parse_common_args(description: str):
+def _parse_common_args(description: str, *, default_device: str = "cuda:0"):
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--device", default="cuda:0", help="Training device (default: cuda:0).")
+    parser.add_argument(
+        "--device", default=default_device,
+        help=f"Training device (default: {default_device}).",
+    )
     parser.add_argument(
         "--output-root",
         type=Path,
@@ -68,6 +73,9 @@ def _launch_matrix(
     protocol_overrides: tuple[str, ...],
     protocol_description: dict,
     args,
+    manifest_filename: str | None = None,
+    log_filename: str | None = None,
+    benchmark_name: str | None = None,
 ) -> int:
     output_root = args.output_root.expanduser()
     if not output_root.is_absolute():
@@ -101,9 +109,11 @@ def _launch_matrix(
             command.extend(["--override", override])
         commands.append(command)
 
-    manifest_path = output_root / "_manifests" / f"{task}_baseline_benchmark.json"
+    manifest_filename = manifest_filename or f"{task}_baseline_benchmark.json"
+    log_filename = log_filename or f"{task}_baseline_benchmark.log"
+    manifest_path = output_root / "_manifests" / manifest_filename
     manifest = {
-        "benchmark": f"non_mrage_{task}_baseline_matrix",
+        "benchmark": benchmark_name or f"non_mrage_{task}_baseline_matrix",
         "protocol_version": protocol_version,
         "datasets": list(datasets),
         "models": list(models),
@@ -135,7 +145,7 @@ def _launch_matrix(
         return 0
 
     _write_json_atomic(manifest_path, manifest)
-    log_path = output_root / "_logs" / f"{task}_baseline_benchmark.log"
+    log_path = output_root / "_logs" / log_filename
     log_path.parent.mkdir(parents=True, exist_ok=True)
     failures: list[tuple[str, int]] = []
     with log_path.open("a", encoding="utf-8") as log:

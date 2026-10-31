@@ -1,0 +1,14 @@
+name: graphmore
+adapter_revision: graphmore_shared_curvature_skip_v2
+
+# GraphMoRE's five stereographic experts and two local topology scales.
+hidden_dim: 32
+embed_dim: 32
+curvatures: [-3.0, -1.0, 0.0, 1.0, 3.0]
+local_hops: [2, 3]
+max_distortion_edges: 8192
+
+# The official NC code uses 1e-4 for distortion. The LP reference scripts
+# use a unit distortion coefficient. Both use the shared task optimizer/head.
+distortion_weight_nc: 1.0e-4
+distortion_weight_lp: 1.0

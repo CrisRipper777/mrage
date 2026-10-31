@@ -1,0 +1,12 @@
+name: ntsformer
+adapter_revision: ntsformer_unified_nc_v2
+
+# Neighbor-to-self feature transformer; input graph features are precomputed
+# with symmetric-normalized SIGN propagation on the shared NC graph.
+pre_k: 2
+hidden_dim: 128
+num_heads: 2
+num_layers: 1
+dropout: 0.1
+node_batch_size: 8192
+self_teaching_weight: 1.0

@@ -93,6 +93,37 @@ class _FusionRepresentation(nn.Module):
         return (1 - a) * z1 + a * z2
 
 
+class _Contrast(nn.Module):
+    """OpenMAG DMGC bidirectional InfoNCE head with bounded batch size."""
+
+    def __init__(self, hidden_dim: int, tau: float, max_samples: int = 2048):
+        super().__init__()
+        self.tau = float(tau)
+        self.max_samples = int(max_samples)
+        self.proj_1 = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim), nn.BatchNorm1d(hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, hidden_dim)
+        )
+        self.proj_2 = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim), nn.BatchNorm1d(hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, hidden_dim)
+        )
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.kaiming_normal_(module.weight)
+
+    def forward(self, z_1: torch.Tensor, z_2: torch.Tensor) -> torch.Tensor:
+        n = int(z_1.size(0))
+        if n < 2:
+            return z_1.new_tensor(0.0)
+        if n > self.max_samples:
+            index = torch.randperm(n, device=z_1.device)[: self.max_samples]
+            z_1, z_2 = z_1[index], z_2[index]
+        z_1 = F.normalize(self.proj_1(z_1), dim=1, p=2)
+        z_2 = F.normalize(self.proj_2(z_2), dim=1, p=2)
+        similarity = z_1 @ z_2.t() / max(self.tau, EPS)
+        target = torch.arange(similarity.size(0), device=similarity.device)
+        return 0.5 * (F.cross_entropy(similarity, target) + F.cross_entropy(similarity.t(), target))
+
+
 class Model(nn.Module):
     supports_link_prediction = True
 
@@ -103,10 +134,10 @@ class Model(nn.Module):
     high-pass (Laplacian) views, per-modality sigmoid low/high fusion, and
     learned attention-based cross-modal fusion with L2 normalization.
 
-    OpenMAG's InfoNCE losses (dual-frequency + cross-modal contrastive) are
-    intentionally NOT included — the adaptation uses the unified supervised
-    CE protocol. The dense [N, N] operators are computed with mathematically
-    identical sparse matmuls so large graphs fit in memory.
+    OpenMAG's dual-frequency and cross-modal InfoNCE losses are included in
+    the model auxiliary objective. Their contrastive heads sample at most
+    2048 nodes, as in the OpenMAG implementation. The dense [N, N] graph
+    operators are computed with sparse matmuls so large graphs fit in memory.
     """
 
     def __init__(self, cfg, data_info):
@@ -122,6 +153,10 @@ class Model(nn.Module):
         self.hidden_dim = int(cfg.model.hidden_dim)
         self.num_layers = int(cfg.model.get("num_layers", 1))
         self.dropout = float(cfg.model.get("dropout", 0.5))
+        self.tau = float(cfg.model.get("tau", 1.0))
+        self.lambda_cr = float(cfg.model.get("lambda_cr", 0.001))
+        self.lambda_cm = float(cfg.model.get("lambda_cm", 1.0))
+        self.max_contrast_samples = int(cfg.model.get("max_contrast_samples", 2048))
 
         self.t_proj = nn.Linear(text_dim, self.hidden_dim)
         self.v_proj = nn.Linear(visual_dim, self.hidden_dim)
@@ -142,6 +177,9 @@ class Model(nn.Module):
                 for _ in range(2)
             ]
         )
+        self.contrast_l = _Contrast(self.hidden_dim, self.tau, self.max_contrast_samples)
+        self.contrast_h = _Contrast(self.hidden_dim, self.tau, self.max_contrast_samples)
+        self.contrast = _Contrast(self.hidden_dim, self.tau, self.max_contrast_samples)
 
         self.out_dim = self.hidden_dim
         self._graph_cache: tuple | None = None
@@ -201,7 +239,7 @@ class Model(nn.Module):
     # DMGC core encode (OpenMAG DMGCCore.forward without the losses)
     # ------------------------------------------------------------------
 
-    def _encode(self, t_feat: torch.Tensor, v_feat: torch.Tensor, adj_l: torch.Tensor, l_h: torch.Tensor) -> torch.Tensor:
+    def _encode(self, t_feat: torch.Tensor, v_feat: torch.Tensor, adj_l: torch.Tensor, l_h: torch.Tensor):
         zt = self.multi_view_projections_t[0](t_feat)
         zm = self.multi_view_projections_m[0](v_feat)
 
@@ -213,7 +251,18 @@ class Model(nn.Module):
         z_t = self.fusion_1(zt_l, zt_h)
         z_m = self.fusion_2(zm_l, zm_h)
 
-        return self.att([z_t], [z_m])
+        return self.att([z_t], [z_m]), z_t, z_m, zt_l, zt_h, zm_l, zm_h
+
+    def _native_loss(self, z_t, z_m, zt_l, zt_h, zm_l, zm_h):
+        loss_l = self.contrast_l(zt_l, z_t) + self.contrast_l(zt_l, z_m)
+        loss_l = loss_l + self.contrast_l(zm_l, z_t) + self.contrast_l(zm_l, z_m)
+        loss_h = self.contrast_h(zt_h, z_t) + self.contrast_h(zt_h, z_m)
+        loss_h = loss_h + self.contrast_h(zm_h, z_t) + self.contrast_h(zm_h, z_m)
+        loss_cross = self.contrast(z_m, z_t)
+        return self.lambda_cr * (loss_l + loss_h) + self.lambda_cm * loss_cross, {
+            "dual_frequency": (loss_l + loss_h).detach(),
+            "cross_modal": loss_cross.detach(),
+        }
 
     # ------------------------------------------------------------------
     # Framework interface
@@ -227,8 +276,12 @@ class Model(nn.Module):
         t_feat = self.t_proj(x[:, : self.text_dim])
         v_feat = self.v_proj(x[:, self.text_dim : self.text_dim + self.visual_dim])
         adj_l, l_h = self._get_graphs(edge_index, num_nodes, device)
-        z = self._encode(t_feat, v_feat, adj_l, l_h)
-        return z, None, None, z.new_tensor(0.0), {}
+        z, z_t, z_m, zt_l, zt_h, zm_l, zm_h = self._encode(t_feat, v_feat, adj_l, l_h)
+        if self.training:
+            aux_loss, aux_info = self._native_loss(z_t, z_m, zt_l, zt_h, zm_l, zm_h)
+        else:
+            aux_loss, aux_info = z.new_tensor(0.0), {}
+        return z, None, None, aux_loss, {"dmgc_losses": aux_info}
 
     @torch.no_grad()
     def inference(
@@ -259,5 +312,5 @@ class Model(nn.Module):
         # previous CPU path passed CPU activations into CUDA modules when this
         # method was used with a GPU model.
         adj_l, l_h = self._build_graphs(edge_index.to(device), num_nodes, device)
-        z = self._encode(t_feat.to(device), v_feat.to(device), adj_l, l_h)
+        z, *_ = self._encode(t_feat.to(device), v_feat.to(device), adj_l, l_h)
         return z.detach().cpu()

@@ -26,6 +26,7 @@ class RoleMAGCore(nn.Module):
         eta_kl=1.0,
         lambda_bal=0.0,
         lambda_qca=0.0,
+        qca_max_nodes=1024,
         tau=0.07,
         shared_num_layers=3,
         shared_edge_floor=1.0,
@@ -65,6 +66,7 @@ class RoleMAGCore(nn.Module):
         self.eta_kl = float(eta_kl)
         self.lambda_bal = float(lambda_bal)
         self.lambda_qca = float(lambda_qca)
+        self.qca_max_nodes = int(qca_max_nodes)
         self.tau = float(tau)
         self.shared_fusion_weight = float(shared_fusion_weight)
         self.lambda_role_entropy = float(lambda_role_entropy)
@@ -87,6 +89,7 @@ class RoleMAGCore(nn.Module):
         self.hetero_schedule_scale = float(hetero_schedule_scale)
         self.current_comp_scale = self.comp_schedule_scale
         self.current_hetero_scale = self.hetero_schedule_scale
+        self.last_loss_components = {}
 
         self.v_proj = nn.Linear(v_feat_dim, hidden_dim)
         self.t_proj = nn.Linear(t_feat_dim, hidden_dim)
@@ -342,6 +345,11 @@ class RoleMAGCore(nn.Module):
         index = torch.nonzero(paired, as_tuple=False).flatten()
         if index.numel() < 2:
             return h_v.new_tensor(0.0)
+        # The reference RoleMAG computes QCA within sampled training batches.
+        # Bound the full-graph NC port to the same scale to avoid an N x N
+        # similarity matrix over every node.
+        if index.numel() > self.qca_max_nodes:
+            index = index[torch.randperm(index.numel(), device=index.device)[: self.qca_max_nodes]]
 
         z_t2i = self.qca_proj_image(comp_info["z_t2i"][index])
         z_i2t = self.qca_proj_text(comp_info["z_i2t"][index])
@@ -455,6 +463,7 @@ class RoleMAGCore(nn.Module):
         }
 
         internal_loss = h.new_tensor(0.0)
+        self.last_loss_components = {}
         if self.training:
             loss_evi = self._compute_evi_loss(h_v, h_t, edge_index, v_mask, t_mask, route)
             loss_bal = self._compute_bal_loss(route)
@@ -463,5 +472,10 @@ class RoleMAGCore(nn.Module):
             loss_u_center = self._compute_u_center_loss(routing_info)
             loss_qca = h.new_tensor(0.0) if self.disable_complementary else self._compute_qca_loss(comp_info, h_v, h_t, v_mask, t_mask)
             internal_loss = loss_evi + loss_bal + loss_role_entropy + loss_gate_entropy + loss_u_center + loss_qca
+            self.last_loss_components = {
+                "evi": loss_evi.detach(),
+                "balance": loss_bal.detach(),
+                "qca": loss_qca.detach(),
+            }
 
         return h, routing_info, internal_loss

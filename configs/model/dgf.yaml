@@ -1,7 +1,7 @@
 name: dgf
 lp_sampled_adapter_version: fixed_three_hop_v1
 
-# DGF filtering-core supervised adaptation (ported from 0901).
+# DGF filter core plus OpenMAG's cross-modal, random-walk graph, and community losses.
 # Its 10 filtering iterations run on the sampled subgraph; the LP sampler
 # remains at the shared three-hop [5,5,5] protocol.
 hidden_dim: 64
@@ -9,6 +9,14 @@ alpha: 1.0
 beta: 1.0
 num_layers: 10
 dropout: 0.0
+max_aux_nodes: 1024
+walks_per_node: 10
+walk_length: 5
+context_size: 3
+num_clusters: 10
+community_theta: 0.3
+aas: true
+aas_std: 1.0
 
 # Official model preset used by the reference protocol.
 lr: 5e-3

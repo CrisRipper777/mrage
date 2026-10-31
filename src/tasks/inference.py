@@ -32,7 +32,7 @@ def infer_all_embeddings(
 
     model.eval()
     edge_index = data.edge_index if uses_graph else None
-    if mode == "layerwise":
+    if mode == "layerwise" or bool(getattr(model, "requires_batched_inference", False)):
         return model.inference(data.x, edge_index, device=device, batch_size=batch_size)
 
     if hasattr(model, "_batch_n_id"):

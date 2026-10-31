@@ -16,7 +16,7 @@ from src.tasks.lp import _resolve_lp_num_neighbors
 
 ROOT = Path(__file__).resolve().parents[1]
 NC_MODELS = ("mlp", "gcn", "sage", "mmgcn", "mgat", "dip", "dgf", "dmgc", "rolemag", "lgmrec")
-LP_MODELS = ("mlp", "gcn", "sage", "mmgcn", "mgat", "dgf", "dmgc")
+LP_MODELS = ("mlp", "gcn", "sage", "mmgcn", "mgat", "dip", "dgf", "dmgc", "rolemag", "lgmrec", "graphmore")
 
 
 def _model_cfg(name: str, task: str):
@@ -79,13 +79,11 @@ def test_baseline_sampled_lp_pair_forward_loss_and_update(name: str) -> None:
         task_cfg = OmegaConf.create(
             {"model": cfg.model, "task": {"num_neighbors": [2, 2, 2]}}
         )
+        fanouts = _resolve_lp_num_neighbors(task_cfg, model)
+        assert fanouts == [2, 2, 2]
         if name == "dgf":
-            assert model.requires_full_lp_sampler_depth is True
-            task_cfg.task.num_neighbors = [2, 2, 2]
-            fanouts = _resolve_lp_num_neighbors(task_cfg, model)
-            assert len(fanouts) == int(cfg.model.num_layers)
-        else:
-            fanouts = _resolve_lp_num_neighbors(task_cfg, model)
+            # Filter iterations do not increase the frozen LP sampler depth.
+            assert model.num_layers == int(cfg.model.num_layers)
         loader = LinkNeighborLoader(
             Data(x=x, edge_index=edge_index),
             edge_label_index=edge_label_index,
@@ -99,7 +97,8 @@ def test_baseline_sampled_lp_pair_forward_loss_and_update(name: str) -> None:
         batch = next(iter(loader))
         if hasattr(model, "_batch_n_id"):
             model._batch_n_id = batch.n_id
-        z, _, _, aux_loss, _ = model(batch.x, batch.edge_index)
+        sampled_forward = getattr(model, "forward_lp_sampled", model)
+        z, _, _, aux_loss, _ = sampled_forward(batch.x, batch.edge_index)
         source, target = batch.edge_label_index
         z_src, z_dst = z[source], z[target]
 

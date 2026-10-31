@@ -1,0 +1,109 @@
+{
+  "scope": "CPU semantic context preparation only; no training, GPU or Test evaluation",
+  "dataset": "sports-copurchase",
+  "torch_threads": 8,
+  "batch_size": 2048,
+  "supervision_fanouts": [
+    5,
+    5,
+    5
+  ],
+  "semantic_context_fanouts": [
+    1,
+    1,
+    1
+  ],
+  "warmup_batches_per_path": 1,
+  "measured_batches_per_path": 3,
+  "bind_seconds": {
+    "before": 0.071680239008856,
+    "after": 0.07714880500861909
+  },
+  "before_median_seconds": 0.13933019500109367,
+  "after_median_seconds": 0.10335784299240913,
+  "context_speedup": 1.3480369845888371,
+  "end_to_end_speedup_measured": false,
+  "exact_context_match": true,
+  "caller_cpu_rng_unchanged": true,
+  "reference_commit": "95ffa1bcc19e34ecc78ca764cca30cd86f99a49c",
+  "reference_file": "src/models/mrage_lp.py",
+  "lp_task_yaml_sha256": "7c7d657ac983926be6f62f48d771b2c0ffe9b2bba708fa9bdf7708fe87a48f6c",
+  "before_source_sha256": "7525e68bdadaf4964cb25386f3afac47806975f0640031e2b4a15a494db26294",
+  "after_source_sha256": "30f40476646762732c27a098033a6010f82f8c740a82cc9fecd620bd5b7f4635",
+  "mrage_yaml_sha256": "43fb53bc32d03c251bef4bf7a47257a51129b861e59b59230ad1199e85ad8365",
+  "semantic_cache": "/hdd1/DataInHere/YHF/mrage/artifacts/semantic_graphs/sports-copurchase/lp/05663b70f2775338ee2e5c3f5d58618ae50fc13c0a904bd6c0a9c176f87f5070/semantic_graph.pt",
+  "records": [
+    {
+      "context_seed": 42,
+      "input_nodes": 34112,
+      "before_seconds": 0.14322184400225524,
+      "after_seconds": 0.10513511599856429,
+      "exact_match": true,
+      "expanded_nodes": 50233,
+      "expanded_edges": 243195,
+      "metadata": {
+        "target_nodes": 3838,
+        "late_source_nodes": 39548,
+        "semantic_context_nodes": 50220,
+        "local_nodes": 50233,
+        "semantic_edges_text": 484049,
+        "semantic_edges_visual": 526075,
+        "extra_train_physical_edges": 31661,
+        "semantic_source_physical_fanout": [
+          1,
+          1,
+          1
+        ],
+        "approximation": "full semantic candidates; semantic-source physical context sampled with fixed fanout 1 per hop from Train graph"
+      }
+    },
+    {
+      "context_seed": 43,
+      "input_nodes": 33928,
+      "after_seconds": 0.0984704389993567,
+      "before_seconds": 0.13608608199865557,
+      "exact_match": true,
+      "expanded_nodes": 50235,
+      "expanded_edges": 243992,
+      "metadata": {
+        "target_nodes": 3865,
+        "late_source_nodes": 39730,
+        "semantic_context_nodes": 50229,
+        "local_nodes": 50235,
+        "semantic_edges_text": 485537,
+        "semantic_edges_visual": 527177,
+        "extra_train_physical_edges": 31660,
+        "semantic_source_physical_fanout": [
+          1,
+          1,
+          1
+        ],
+        "approximation": "full semantic candidates; semantic-source physical context sampled with fixed fanout 1 per hop from Train graph"
+      }
+    },
+    {
+      "context_seed": 44,
+      "input_nodes": 34231,
+      "before_seconds": 0.13933019500109367,
+      "after_seconds": 0.10335784299240913,
+      "exact_match": true,
+      "expanded_nodes": 50241,
+      "expanded_edges": 244748,
+      "metadata": {
+        "target_nodes": 3855,
+        "late_source_nodes": 39749,
+        "semantic_context_nodes": 50229,
+        "local_nodes": 50241,
+        "semantic_edges_text": 486738,
+        "semantic_edges_visual": 529531,
+        "extra_train_physical_edges": 31682,
+        "semantic_source_physical_fanout": [
+          1,
+          1,
+          1
+        ],
+        "approximation": "full semantic candidates; semantic-source physical context sampled with fixed fanout 1 per hop from Train graph"
+      }
+    }
+  ]
+}

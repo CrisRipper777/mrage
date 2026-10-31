@@ -94,6 +94,7 @@ class Model(nn.Module):
             eta_kl=float(cfg.model.get("eta_kl", 1.0)),
             lambda_bal=float(cfg.model.get("lambda_bal", 0.0)),
             lambda_qca=float(cfg.model.get("lambda_qca", 0.0)),
+            qca_max_nodes=int(cfg.model.get("qca_max_nodes", 1024)),
             tau=float(cfg.model.get("tau", 0.07)),
             shared_num_layers=int(cfg.model.get("shared_num_layers", 3)),
             shared_edge_floor=float(cfg.model.get("shared_edge_floor", 1.0)),
@@ -164,7 +165,9 @@ class Model(nn.Module):
             t_mask=text_mask,
         )
         z = backbone_h + self.role_residual_weight * role_h
-        return z, None, None, aux_loss, {}
+        return z, None, None, aux_loss, {
+            "rolemag_losses": dict(self.core.last_loss_components)
+        }
 
     def forward_lp_sampled(self, x: torch.Tensor, edge_index: torch.Tensor):
         """Encode one sampled LP graph, keeping routing local to its edges."""

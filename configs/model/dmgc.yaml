@@ -1,15 +1,18 @@
 name: dmgc
 
-# DMGC supervised adaptation (ported from 0901).
+# DMGC with OpenMAG's dual-frequency and cross-modal model objectives.
 hidden_dim: 128
 num_layers: 1
 dropout: 0.5
 
-# Kept for configuration fidelity; the unified protocol drops InfoNCE losses.
+# OpenMAG DMGC objective weights; each contrastive head samples at most 2048 nodes.
 tau: 1.0
 lambda_cr: 0.001
-lambda_cm: 1.0
+# NC uses the validation-selected task value; LP falls back to OpenMAG's 1.0.
+lambda_cm: ${oc.select:task.dmgc_lambda_cm,1.0}
+max_contrast_samples: 2048
 
-# Official model preset used by the reference protocol.
+# OpenMAG reference NC optimizer preset. A separate trial script explicitly
+# overrides these with the shared task-level LR/weight-decay values.
 lr: 5e-3
 weight_decay: 1e-5

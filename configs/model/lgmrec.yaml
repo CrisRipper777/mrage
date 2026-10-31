@@ -1,7 +1,8 @@
 name: lgmrec
 
-# LGMRec (RecSys 2024), ported from 0901/OpenMAG.
-# Unified protocol: plain CE/BCE only; no modality InfoNCE auxiliary loss.
+# LGMRec (RecSys 2024), ported from OpenMAG's implementation.
+# The port has no model-internal auxiliary objective; use the shared task loss.
+# This follows OpenMAG's LGMRec implementation and does not restore paper HCL.
 # For sampled LP, hypergraph assignment and aggregation use each sampled
 # message subgraph during training; validation and final testing use the full
 # train graph.

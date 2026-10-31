@@ -12,6 +12,9 @@ node_split_path: ${dataset.root}/split.pt
 node_mapping_path: ${dataset.root}/node_mapping.pt
 
 num_classes: 12
+# Class 5 has no labeled nodes in the dataset. Keep the model's 12-logit
+# output space, but compute Macro-F1 over the 11 classes present in the data.
+nc_macro_f1_labels: [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
 feature_dtype: float32
 text_dim: 512
 visual_dim: 512

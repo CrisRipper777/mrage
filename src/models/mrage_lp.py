@@ -16,6 +16,7 @@ from typing import Any
 import torch
 from torch_geometric.data import Data
 from torch_geometric.loader import NeighborLoader
+from torch_geometric.sampler import NeighborSampler
 
 from src.models.mrage import Model as FinalModel
 
@@ -45,6 +46,7 @@ class Model(FinalModel):
         self._lp_global_x: torch.Tensor | None = None
         self._lp_global_edge_index: torch.Tensor | None = None
         self._lp_global_graph: Data | None = None
+        self._lp_context_sampler: NeighborSampler | None = None
         self._lp_sorted_edge_codes: torch.Tensor | None = None
         self._lp_sorted_edge_ids: torch.Tensor | None = None
         self.last_sampled_context: dict[str, int | list[int] | str] = {}
@@ -109,10 +111,37 @@ class Model(FinalModel):
             raise ValueError("LP Train graph contains an invalid node ID")
         self._lp_global_x = x_cpu
         self._lp_global_edge_index = edge_cpu
-        self._lp_global_graph = Data(x=x_cpu, edge_index=edge_cpu)
+        # Context expansion only reads sampled IDs and edges. Do not gather a
+        # second feature matrix in NeighborLoader; added features are read below.
+        self._lp_global_graph = Data(edge_index=edge_cpu, num_nodes=self.num_nodes)
+        # CSC conversion/sorting depends only on the bound Train graph, not on
+        # this batch's seed nodes. Rebuild once whenever the graph is rebound.
+        self._lp_context_sampler = NeighborSampler(
+            self._lp_global_graph,
+            num_neighbors=list(self.semantic_context_physical_fanout),
+            subgraph_type="bidirectional",
+        )
         edge_codes = edge_cpu[0] * self.num_nodes + edge_cpu[1]
         self._lp_sorted_edge_codes, self._lp_sorted_edge_ids = edge_codes.sort()
         self.build_semantic_incoming_index()
+
+    @staticmethod
+    def _incoming_positions(
+        destinations: torch.Tensor,
+        ptr: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        destinations = torch.unique(destinations.detach().cpu().long(), sorted=True)
+        counts = ptr[destinations + 1] - ptr[destinations]
+        total = int(counts.sum().item())
+        if total == 0:
+            empty = torch.empty(0, dtype=torch.long)
+            return empty, empty
+        group = torch.repeat_interleave(torch.arange(destinations.numel()), counts, output_size=total)
+        group_starts = torch.repeat_interleave(counts.cumsum(0) - counts, counts, output_size=total)
+        offsets = torch.arange(total, dtype=torch.long) - group_starts
+        dst = destinations[group]
+        positions = ptr[dst] + offsets
+        return positions, dst
 
     @staticmethod
     def _incoming_rows(
@@ -122,18 +151,8 @@ class Model(FinalModel):
         weights: torch.Tensor,
         source_flags: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        destinations = torch.unique(destinations.detach().cpu().long(), sorted=True)
-        counts = ptr[destinations + 1] - ptr[destinations]
-        total = int(counts.sum().item())
-        if total == 0:
-            empty = torch.empty(0, dtype=torch.long)
-            return empty, empty, torch.empty(0, dtype=weights.dtype), torch.empty((0, 2), dtype=torch.uint8)
-        group = torch.repeat_interleave(torch.arange(destinations.numel()), counts)
-        group_starts = torch.repeat_interleave(counts.cumsum(0) - counts, counts)
-        offsets = torch.arange(total, dtype=torch.long) - group_starts
-        positions = ptr[destinations[group]] + offsets
+        positions, dst = Model._incoming_positions(destinations, ptr)
         src = sources[positions]
-        dst = destinations[group]
         return (
             src.contiguous(), dst.contiguous(), weights[positions].contiguous(),
             source_flags[positions].contiguous(),
@@ -156,6 +175,36 @@ class Model(FinalModel):
         group_starts = torch.repeat_interleave(counts.cumsum(0) - counts, counts)
         offsets = torch.arange(int(counts.sum().item()), dtype=torch.long) - group_starts
         return self._lp_sorted_edge_ids[starts[groups] + offsets].unique(sorted=True)
+
+    def _sample_semantic_source_context(
+        self, source_nodes: torch.Tensor, *, sample_seed: int,
+    ) -> Data | None:
+        if self._lp_global_graph is None or self._lp_context_sampler is None:
+            raise RuntimeError("LP graph has not been bound")
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(int(sample_seed) % (2**31 - 1))
+            # Retain the Loader iterator's RNG draw and sample ordering. Only
+            # its immutable Train-graph sampler/CSC index is reused.
+            loader = NeighborLoader(
+                self._lp_global_graph,
+                input_nodes=source_nodes,
+                num_neighbors=list(self.semantic_context_physical_fanout),
+                batch_size=max(int(source_nodes.numel()), 1),
+                shuffle=False,
+                subgraph_type="bidirectional",
+                num_workers=0,
+                neighbor_sampler=self._lp_context_sampler,
+            )
+            return next(iter(loader)) if source_nodes.numel() else None
+
+    @staticmethod
+    def _first_unique_positions(values: torch.Tensor) -> torch.Tensor:
+        """Keep the first occurrence of each EID in original sampler order."""
+        order = torch.argsort(values, stable=True)
+        ordered_values = values[order]
+        first = torch.ones(order.numel(), dtype=torch.bool)
+        first[1:] = ordered_values[1:] != ordered_values[:-1]
+        return order[first].sort().values
 
     def prepare_sampled_lp_batch(self, batch, *, sample_seed: int) -> None:
         """Add semantic closure and sampled Train-only physical context in-place.
@@ -180,9 +229,9 @@ class Model(FinalModel):
         # target endpoints, without a local top-K or candidate truncation.
         target_sources: list[torch.Tensor] = []
         for modality in ("text", "visual"):
-            ptr, sources, weights, source_flags = self._semantic_incoming_cpu[modality]
-            src, _, _, _ = self._incoming_rows(target_global, ptr, sources, weights, source_flags)
-            target_sources.append(src)
+            ptr, sources, _, _ = self._semantic_incoming_cpu[modality]
+            positions, _ = self._incoming_positions(target_global, ptr)
+            target_sources.append(sources[positions])
         late_source_global = torch.unique(torch.cat(target_sources), sorted=True) if target_sources else target_global[:0]
         semantic_targets = torch.unique(torch.cat((target_global, late_source_global)), sorted=True)
 
@@ -200,18 +249,7 @@ class Model(FinalModel):
         # Sample the source nodes' physical representations from the official
         # Train graph only. Fanout 1 is a fixed, explicit approximation to the
         # encoder's full 3-hop physical receptive field for these extra nodes.
-        with torch.random.fork_rng(devices=[]):
-            torch.manual_seed(int(sample_seed) % (2**31 - 1))
-            loader = NeighborLoader(
-                self._lp_global_graph,
-                input_nodes=late_source_global,
-                num_neighbors=list(self.semantic_context_physical_fanout),
-                batch_size=max(int(late_source_global.numel()), 1),
-                shuffle=False,
-                subgraph_type="bidirectional",
-                num_workers=0,
-            )
-            extra = next(iter(loader)) if late_source_global.numel() else None
+        extra = self._sample_semantic_source_context(late_source_global, sample_seed=sample_seed)
 
         positive_mask = batch.edge_label.detach().cpu() > 0.5
         positive_local = batch.edge_label_index[:, positive_mask].detach().cpu().long()
@@ -226,6 +264,8 @@ class Model(FinalModel):
         existing_eids = batch.e_id.detach().cpu().long().unique(sorted=True)
 
         combined_ids = original_n_id
+        global_to_local = torch.full((self.num_nodes,), -1, dtype=torch.long)
+        global_to_local[original_n_id] = torch.arange(original_n_id.numel())
         extra_edges_global = torch.empty((2, 0), dtype=torch.long)
         extra_eids = torch.empty(0, dtype=torch.long)
         if extra is not None:
@@ -233,10 +273,9 @@ class Model(FinalModel):
             context_nodes = torch.unique(
                 torch.cat((extra_n_id, late_source_global, all_semantic_sources)), sorted=True
             )
-            present = torch.zeros(self.num_nodes, dtype=torch.bool)
-            present[original_n_id] = True
-            add_ids = context_nodes[~present[context_nodes]].unique(sorted=True)
+            add_ids = context_nodes[global_to_local[context_nodes] < 0]
             combined_ids = torch.cat((original_n_id, add_ids))
+            global_to_local[add_ids] = torch.arange(original_n_id.numel(), combined_ids.numel())
 
             extra_eids_all = extra.e_id.detach().cpu().long()
             forbidden = torch.cat((forbidden_eids, existing_eids)).unique(sorted=True)
@@ -245,19 +284,11 @@ class Model(FinalModel):
             kept_eids = extra_eids_all[keep]
             if kept_eids.numel():
                 # Preserve NeighborLoader edge order while dropping duplicate EIDs.
-                seen: set[int] = set()
-                selected = []
-                for index, eid in enumerate(kept_eids.tolist()):
-                    if eid not in seen:
-                        seen.add(eid)
-                        selected.append(index)
-                selected_tensor = torch.tensor(selected, dtype=torch.long)
+                selected_tensor = self._first_unique_positions(kept_eids)
                 keep_positions = torch.nonzero(keep, as_tuple=False).flatten()[selected_tensor]
                 extra_eids = extra_eids_all[keep_positions]
                 extra_local_edges = extra.edge_index.detach().cpu().long()[:, keep_positions]
                 edge_global_ids = extra_n_id[extra_local_edges]
-                global_to_local = torch.full((self.num_nodes,), -1, dtype=torch.long)
-                global_to_local[combined_ids] = torch.arange(combined_ids.numel())
                 extra_edges_global = global_to_local[edge_global_ids]
                 if bool((extra_edges_global < 0).any()):
                     raise RuntimeError("semantic-context physical edges reference an unmapped node")
@@ -270,8 +301,6 @@ class Model(FinalModel):
             batch.e_id = torch.cat((batch.e_id, extra_eids), dim=0).contiguous()
         batch.n_id = combined_ids.contiguous()
 
-        global_to_local = torch.full((self.num_nodes,), -1, dtype=torch.long)
-        global_to_local[combined_ids] = torch.arange(combined_ids.numel())
         local_semantic: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
         local_flags: dict[str, torch.Tensor] = {}
         for modality, (src, dst, weight, edge_flags) in semantic_rows.items():
