@@ -1,0 +1,28 @@
+{
+  "study": "mrage_nc5_capability_ablation",
+  "model_name": "mrage_capability_ablation",
+  "baseline_branch": "codex/mrage-nc5-ablation",
+  "baseline_commit": "faacbee19a7b3b27b6c2a7935d9bd99376eb938a",
+  "work_branch": "codex/mrage-nc5-capability-ablation",
+  "task": "nc",
+  "variants": [
+    "physical_only",
+    "semantic_only",
+    "no_cross_modal_collaboration",
+    "feature_only"
+  ],
+  "datasets": [
+    "Movies",
+    "Toys",
+    "Grocery",
+    "ele-fashion",
+    "Reddit-S"
+  ],
+  "training_seeds": [42, 43, 44],
+  "expected_seed_runs": 60,
+  "adopted_config_pattern": "experiments/nc5_test_exploration_20261031/adopted/<dataset>.yaml",
+  "split_protocol": "MAGB split seed 42; official ele-fashion split",
+  "evaluation_protocol": "best Validation Accuracy checkpoint; one independent Final Test",
+  "output_root": "outputs/mrage_capability_nc5",
+  "formal_training_started": false
+}
