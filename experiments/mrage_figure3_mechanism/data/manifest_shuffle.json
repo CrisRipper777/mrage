@@ -1,0 +1,367 @@
+{
+  "runs": [
+    {
+      "dataset": "Grocery",
+      "training_seed": 42,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-42/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-42/config_resolved.yaml",
+      "best_epoch": 78,
+      "saved_val_acc": 0.8345534205436707,
+      "saved_val_macro_f1": 0.7538974436179412,
+      "recomputed_val_ce": 0.6282243728637695,
+      "recomputed_val_acc": 0.8345534801483154,
+      "recomputed_val_macro_f1": 0.7538974436179412,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "parameter_checksum_before": "eadc9360539f872b198c4576800391adf90a9eb5e5bd8a930693167fa495e554",
+      "parameter_checksum_after": "eadc9360539f872b198c4576800391adf90a9eb5e5bd8a930693167fa495e554",
+      "edge_index_checksum_before": "0bca303020f1006497ec0148f1fc3d69eab32d6a16006afc9a469ce5f6c5405a",
+      "edge_index_checksum_after": "0bca303020f1006497ec0148f1fc3d69eab32d6a16006afc9a469ce5f6c5405a",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Grocery",
+      "training_seed": 43,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-43/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-43/config_resolved.yaml",
+      "best_epoch": 65,
+      "saved_val_acc": 0.833089292049408,
+      "saved_val_macro_f1": 0.7416218943072965,
+      "recomputed_val_ce": 0.61686772108078,
+      "recomputed_val_acc": 0.8330893516540527,
+      "recomputed_val_macro_f1": 0.7416218943072965,
+      "identity_max_abs_diff": 1.6689300537109375e-06,
+      "parameter_checksum_before": "653b63d547a3442af19a231bbbf4dc2a9236a7f7c874d951a1632620c7c57614",
+      "parameter_checksum_after": "653b63d547a3442af19a231bbbf4dc2a9236a7f7c874d951a1632620c7c57614",
+      "edge_index_checksum_before": "0bca303020f1006497ec0148f1fc3d69eab32d6a16006afc9a469ce5f6c5405a",
+      "edge_index_checksum_after": "0bca303020f1006497ec0148f1fc3d69eab32d6a16006afc9a469ce5f6c5405a",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Grocery",
+      "training_seed": 44,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-44/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Grocery/nc/mrage/a1f872eff7a7c1a9/seed-44/config_resolved.yaml",
+      "best_epoch": 83,
+      "saved_val_acc": 0.8327965140342712,
+      "saved_val_macro_f1": 0.7661165360001888,
+      "recomputed_val_ce": 0.6242391467094421,
+      "recomputed_val_acc": 0.8327965140342712,
+      "recomputed_val_macro_f1": 0.7661165360001888,
+      "identity_max_abs_diff": 1.6689300537109375e-06,
+      "parameter_checksum_before": "b3b1384b83e93b06e934af9a97b8da4a20cad26f1974aeefd14c6360912d917a",
+      "parameter_checksum_after": "b3b1384b83e93b06e934af9a97b8da4a20cad26f1974aeefd14c6360912d917a",
+      "edge_index_checksum_before": "0bca303020f1006497ec0148f1fc3d69eab32d6a16006afc9a469ce5f6c5405a",
+      "edge_index_checksum_after": "0bca303020f1006497ec0148f1fc3d69eab32d6a16006afc9a469ce5f6c5405a",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Toys",
+      "training_seed": 42,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-42/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-42/config_resolved.yaml",
+      "best_epoch": 54,
+      "saved_val_acc": 0.8043005466461182,
+      "saved_val_macro_f1": 0.7702363551938629,
+      "recomputed_val_ce": 0.6738569140434265,
+      "recomputed_val_acc": 0.8043005466461182,
+      "recomputed_val_macro_f1": 0.7702363551938629,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "parameter_checksum_before": "e1fac0429941eb5c09af441f47feea8754c712d6bee424faca779acdab2d027b",
+      "parameter_checksum_after": "e1fac0429941eb5c09af441f47feea8754c712d6bee424faca779acdab2d027b",
+      "edge_index_checksum_before": "1a0d63df7dc694c151d44f961ebcf9faab4ef07b2fd5f5b092333aea446afd0b",
+      "edge_index_checksum_after": "1a0d63df7dc694c151d44f961ebcf9faab4ef07b2fd5f5b092333aea446afd0b",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Toys",
+      "training_seed": 43,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-43/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-43/config_resolved.yaml",
+      "best_epoch": 72,
+      "saved_val_acc": 0.8050253391265869,
+      "saved_val_macro_f1": 0.7781104880405362,
+      "recomputed_val_ce": 0.6734856367111206,
+      "recomputed_val_acc": 0.8050253987312317,
+      "recomputed_val_macro_f1": 0.7781104880405362,
+      "identity_max_abs_diff": 1.9073486328125e-06,
+      "parameter_checksum_before": "9458b6f4bcd6ec1099f6f948ef4783b685557a8c8aaea1af4890c7f698a31dc2",
+      "parameter_checksum_after": "9458b6f4bcd6ec1099f6f948ef4783b685557a8c8aaea1af4890c7f698a31dc2",
+      "edge_index_checksum_before": "1a0d63df7dc694c151d44f961ebcf9faab4ef07b2fd5f5b092333aea446afd0b",
+      "edge_index_checksum_after": "1a0d63df7dc694c151d44f961ebcf9faab4ef07b2fd5f5b092333aea446afd0b",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Toys",
+      "training_seed": 44,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-44/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/tuned128/Toys/nc/mrage/8a883402bdb6a07e/seed-44/config_resolved.yaml",
+      "best_epoch": 60,
+      "saved_val_acc": 0.8050253391265869,
+      "saved_val_macro_f1": 0.7742694799667089,
+      "recomputed_val_ce": 0.6767191290855408,
+      "recomputed_val_acc": 0.8050253987312317,
+      "recomputed_val_macro_f1": 0.7742694799667089,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "parameter_checksum_before": "b482f3a90bd32ab8d34dcc953d94f94b570a9b724c2fcba6f300af77b055122c",
+      "parameter_checksum_after": "b482f3a90bd32ab8d34dcc953d94f94b570a9b724c2fcba6f300af77b055122c",
+      "edge_index_checksum_before": "1a0d63df7dc694c151d44f961ebcf9faab4ef07b2fd5f5b092333aea446afd0b",
+      "edge_index_checksum_after": "1a0d63df7dc694c151d44f961ebcf9faab4ef07b2fd5f5b092333aea446afd0b",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Reddit-S",
+      "training_seed": 42,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-42/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-42/config_resolved.yaml",
+      "best_epoch": 46,
+      "saved_val_acc": 0.9625668525695801,
+      "saved_val_macro_f1": 0.9201089092800308,
+      "recomputed_val_ce": 0.13692998886108398,
+      "recomputed_val_acc": 0.9625668525695801,
+      "recomputed_val_macro_f1": 0.9201089092800308,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "parameter_checksum_before": "5532c11427f577a4736ee569754c591f9f7143ee16abaf83e8163954f5618b75",
+      "parameter_checksum_after": "5532c11427f577a4736ee569754c591f9f7143ee16abaf83e8163954f5618b75",
+      "edge_index_checksum_before": "6872df76ca1acb577c7ed823f91584e8d3a3da0592b20c0bf3a77987a2a31bea",
+      "edge_index_checksum_after": "6872df76ca1acb577c7ed823f91584e8d3a3da0592b20c0bf3a77987a2a31bea",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Reddit-S",
+      "training_seed": 43,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-43/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-43/config_resolved.yaml",
+      "best_epoch": 49,
+      "saved_val_acc": 0.9653978943824768,
+      "saved_val_macro_f1": 0.9298723617702995,
+      "recomputed_val_ce": 0.1317855715751648,
+      "recomputed_val_acc": 0.9653978943824768,
+      "recomputed_val_macro_f1": 0.9298723617702995,
+      "identity_max_abs_diff": 1.3113021850585938e-06,
+      "parameter_checksum_before": "eaec2c2ba29e87a5f780a6dc65bd9a75bcba80686a65be20e96494d00426c450",
+      "parameter_checksum_after": "eaec2c2ba29e87a5f780a6dc65bd9a75bcba80686a65be20e96494d00426c450",
+      "edge_index_checksum_before": "6872df76ca1acb577c7ed823f91584e8d3a3da0592b20c0bf3a77987a2a31bea",
+      "edge_index_checksum_after": "6872df76ca1acb577c7ed823f91584e8d3a3da0592b20c0bf3a77987a2a31bea",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Reddit-S",
+      "training_seed": 44,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-44/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/reddit_aux01/Reddit-S/nc/mrage/700dd52266746cb9/seed-44/config_resolved.yaml",
+      "best_epoch": 54,
+      "saved_val_acc": 0.9631959795951843,
+      "saved_val_macro_f1": 0.9205830227779128,
+      "recomputed_val_ce": 0.13375480473041534,
+      "recomputed_val_acc": 0.9631959795951843,
+      "recomputed_val_macro_f1": 0.9205830227779128,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "parameter_checksum_before": "ae1e8cc498aa57dea48552ae02df0186656593d00016f87e9ec630998a4a55d9",
+      "parameter_checksum_after": "ae1e8cc498aa57dea48552ae02df0186656593d00016f87e9ec630998a4a55d9",
+      "edge_index_checksum_before": "6872df76ca1acb577c7ed823f91584e8d3a3da0592b20c0bf3a77987a2a31bea",
+      "edge_index_checksum_after": "6872df76ca1acb577c7ed823f91584e8d3a3da0592b20c0bf3a77987a2a31bea",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "ele-fashion",
+      "training_seed": 42,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-42/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-42/config_resolved.yaml",
+      "best_epoch": 118,
+      "saved_val_acc": 0.877365231513977,
+      "saved_val_macro_f1": 0.683815927169212,
+      "recomputed_val_ce": 0.40318262577056885,
+      "recomputed_val_acc": 0.877365231513977,
+      "recomputed_val_macro_f1": 0.683815927169212,
+      "identity_max_abs_diff": 2.3245811462402344e-06,
+      "parameter_checksum_before": "4abeb67f7157d7d24fb365f9de7aaf219e9511745ff96054d792f5b858b87c00",
+      "parameter_checksum_after": "4abeb67f7157d7d24fb365f9de7aaf219e9511745ff96054d792f5b858b87c00",
+      "edge_index_checksum_before": "b29f1534c4ab2da983d42e32784eba2d05ce9bc5cdca23c4262bd32c6be7ebe3",
+      "edge_index_checksum_after": "b29f1534c4ab2da983d42e32784eba2d05ce9bc5cdca23c4262bd32c6be7ebe3",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "ele-fashion",
+      "training_seed": 43,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-43/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-43/config_resolved.yaml",
+      "best_epoch": 106,
+      "saved_val_acc": 0.8761378526687622,
+      "saved_val_macro_f1": 0.6766260822269964,
+      "recomputed_val_ce": 0.3929951786994934,
+      "recomputed_val_acc": 0.876137912273407,
+      "recomputed_val_macro_f1": 0.6766260822269964,
+      "identity_max_abs_diff": 1.6689300537109375e-06,
+      "parameter_checksum_before": "9105deaea4b482ee8f1ec7c57222f8c146980f3c6213ce11e7d466c8f96e4808",
+      "parameter_checksum_after": "9105deaea4b482ee8f1ec7c57222f8c146980f3c6213ce11e7d466c8f96e4808",
+      "edge_index_checksum_before": "b29f1534c4ab2da983d42e32784eba2d05ce9bc5cdca23c4262bd32c6be7ebe3",
+      "edge_index_checksum_after": "b29f1534c4ab2da983d42e32784eba2d05ce9bc5cdca23c4262bd32c6be7ebe3",
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "ele-fashion",
+      "training_seed": 44,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-44/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/nc5_test_exploration_20261031/fashion_gate64/ele-fashion/nc/mrage/91edd92176df744a/seed-44/config_resolved.yaml",
+      "best_epoch": 152,
+      "saved_val_acc": 0.8742968440055847,
+      "saved_val_macro_f1": 0.6846895814250938,
+      "recomputed_val_ce": 0.42994800209999084,
+      "recomputed_val_acc": 0.8742968440055847,
+      "recomputed_val_macro_f1": 0.6846895814250938,
+      "identity_max_abs_diff": 2.1457672119140625e-06,
+      "parameter_checksum_before": "03d1ae08b687cb022fbc97ed332f7baafe3953661cefda658ab3ae63e8e83203",
+      "parameter_checksum_after": "03d1ae08b687cb022fbc97ed332f7baafe3953661cefda658ab3ae63e8e83203",
+      "edge_index_checksum_before": "b29f1534c4ab2da983d42e32784eba2d05ce9bc5cdca23c4262bd32c6be7ebe3",
+      "edge_index_checksum_after": "b29f1534c4ab2da983d42e32784eba2d05ce9bc5cdca23c4262bd32c6be7ebe3",
+      "device": "cuda:0"
+    }
+  ],
+  "checks": [
+    {
+      "dataset": "Grocery",
+      "training_seed": 42,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": -5.960464477539063e-08,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Grocery",
+      "training_seed": 43,
+      "identity_max_abs_diff": 1.6689300537109375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 5.960464477539063e-08,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Grocery",
+      "training_seed": 44,
+      "identity_max_abs_diff": 1.6689300537109375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 0.0,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Toys",
+      "training_seed": 42,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 0.0,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Toys",
+      "training_seed": 43,
+      "identity_max_abs_diff": 1.9073486328125e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 1.1920928955078125e-07,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Toys",
+      "training_seed": 44,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 0.0,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Reddit-S",
+      "training_seed": 42,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": -1.4901161193847656e-08,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Reddit-S",
+      "training_seed": 43,
+      "identity_max_abs_diff": 1.3113021850585938e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 0.0,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "Reddit-S",
+      "training_seed": 44,
+      "identity_max_abs_diff": 1.430511474609375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 1.4901161193847656e-08,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "ele-fashion",
+      "training_seed": 42,
+      "identity_max_abs_diff": 2.3245811462402344e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 5.960464477539063e-08,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "ele-fashion",
+      "training_seed": 43,
+      "identity_max_abs_diff": 1.6689300537109375e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 0.0,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    },
+    {
+      "dataset": "ele-fashion",
+      "training_seed": 44,
+      "identity_max_abs_diff": 2.1457672119140625e-06,
+      "identity_prediction_mismatch": 0.0,
+      "identity_metric_deltas": {
+        "val_ce": 2.9802322387695312e-08,
+        "val_acc": 0.0,
+        "val_macro_f1": 0.0
+      },
+      "identity_n_changed": 0
+    }
+  ],
+  "failures": []
+}
