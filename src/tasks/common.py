@@ -7,10 +7,33 @@ import torch
 from omegaconf import ListConfig
 
 
-def validation_metrics_match(saved_value: float, recomputed_value: float) -> bool:
+def validation_metrics_match(
+    saved_value: float,
+    recomputed_value: float,
+    *,
+    rel_tol: float = 1e-6,
+    abs_tol: float = 1e-6,
+) -> bool:
     """Compare reloaded Validation metrics with practical floating-point tolerance."""
     return math.isclose(
-        float(saved_value), float(recomputed_value), rel_tol=1e-6, abs_tol=1e-6
+        float(saved_value), float(recomputed_value), rel_tol=rel_tol, abs_tol=abs_tol
+    )
+
+
+# The LP final-Test phase recomputes Validation in a separate process. CUDA
+# index_add_/scatter reductions are not bitwise deterministic, so a handful of
+# rank-boundary flips can move Hits@k/MRR by ~1e-5 even when the checkpoint is
+# identical. The exact checkpoint file is verified separately by SHA256; this
+# tolerance only absorbs rank-boundary noise. 1e-3 = 0.1 percentage point.
+RANKING_VALIDATION_METRIC_ABS_TOL = 1.0e-3
+
+
+def ranking_validation_metrics_match(saved_value: float, recomputed_value: float) -> bool:
+    """Compare LP rank metrics while tolerating small nondeterministic drift."""
+    return validation_metrics_match(
+        saved_value,
+        recomputed_value,
+        abs_tol=RANKING_VALIDATION_METRIC_ABS_TOL,
     )
 
 

@@ -191,6 +191,21 @@ def _load_completed_test_metrics(path: Path) -> dict:
     return payload
 
 
+def _retryable_unconsumed_final_test(status: dict, final_path: Path) -> bool:
+    """True only when a final-Test attempt failed before recording any result.
+
+    The evaluator writes ``final_test_metrics.json`` atomically after Test
+    scoring. A failure before that write leaves ``test_evaluation_count == 0``
+    and no result file, so no Test budget was consumed. Such a run can safely
+    return to ``validation_complete`` and retry its Final Test.
+    """
+    return (
+        status.get("status") == "final_test_outcome_unknown"
+        and int(status.get("test_evaluation_count", 0)) == 0
+        and not final_path.is_file()
+    )
+
+
 def _prepare_run(args, seed: int, run_dir: Path, config_hash: str, source_commit: str):
     cfg = _compose_config(args, seed)
     cfg.task.phase = "train"
@@ -315,6 +330,16 @@ def _run_one(args, seed: int, model: str, output_root: Path, source_commit: str)
                         write_json_atomic(metadata_path, metadata)
                 print(f"SKIP complete: {run_dir}")
                 return "complete"
+            if _retryable_unconsumed_final_test(status, final_path):
+                print(f"RETRY unconsumed final-test: {run_dir}")
+                status = {
+                    "status": "validation_complete",
+                    "stage": "validation",
+                    "training_seed": int(seed),
+                    "test_evaluation_count": 0,
+                    "retried_unconsumed_final_test_at_unix": time.time(),
+                }
+                write_json_atomic(status_path, status)
             if status.get("status") != "validation_complete":
                 raise RuntimeError(
                     "resume is allowed only from validation_complete; "

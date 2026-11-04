@@ -25,9 +25,9 @@ from src.tasks.common import (
     clone_state_dict,
     load_state_dict_cpu,
     log_optimizer,
+    ranking_validation_metrics_match,
     resolve_num_neighbors,
     scheduler_step,
-    validation_metrics_match,
 )
 from src.tasks.inference import infer_all_embeddings, resolve_inference_mode
 from src.utils.metrics import format_pct
@@ -1102,15 +1102,15 @@ def evaluate_lp_checkpoint(
     checkpoint_metrics = checkpoint.get("metrics", {})
     for name, value in validation.items():
         metric_name = f"val_{name}"
-        if metric_name in checkpoint_metrics and not validation_metrics_match(
+        if metric_name in checkpoint_metrics and not ranking_validation_metrics_match(
             checkpoint_metrics[metric_name], value
         ):
             raise ValueError(f"recomputed Validation {metric_name} differs from checkpoint")
-        if metric_name in validation_payload.get("metrics", {}) and not validation_metrics_match(
+        if metric_name in validation_payload.get("metrics", {}) and not ranking_validation_metrics_match(
             validation_payload["metrics"][metric_name], value
         ):
             raise ValueError(f"saved validation record disagrees for {metric_name}")
-    if not validation_metrics_match(checkpoint_metrics["val_mrr"], validation["mrr"]):
+    if not ranking_validation_metrics_match(checkpoint_metrics["val_mrr"], validation["mrr"]):
         raise ValueError("recomputed Validation MRR differs from selected checkpoint")
 
     test = _evaluate_split(

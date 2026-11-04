@@ -10,13 +10,24 @@ import torch.nn as nn
 from omegaconf import OmegaConf
 
 from scripts.collect_results import collect
-from scripts.run_paper_benchmark import _compose_config, _config_hash, _prepare_run, _run_one
+from scripts.run_paper_benchmark import (
+    _compose_config,
+    _config_hash,
+    _prepare_run,
+    _retryable_unconsumed_final_test,
+    _run_one,
+)
 from src.data import MAGData
 from src.data.loaders import _load_magb
 from src.data.splits import generate_nc_split
 from src.tasks.lp import _evaluate_split as evaluate_lp_split
 from src.tasks.nc import _resolve_nc_eval_labels
-from src.tasks.common import build_optimizer, optimizer_metadata, validation_metrics_match
+from src.tasks.common import (
+    build_optimizer,
+    optimizer_metadata,
+    ranking_validation_metrics_match,
+    validation_metrics_match,
+)
 from src.utils.run_artifacts import write_json_atomic
 from src.utils.seeds import set_seed
 from src.utils.timing import PhaseProfiler
@@ -158,6 +169,33 @@ def test_validation_metric_comparison_tolerates_small_float_differences():
     assert validation_metrics_match(reference, reference + 1e-8)
     assert validation_metrics_match(reference, reference + 1e-7)
     assert not validation_metrics_match(reference, reference + 1e-3)
+
+
+def test_ranking_validation_metric_comparison_allows_rank_boundary_noise():
+    reference = 0.5980234580417563
+    # A few CUDA rank flips at the 1/N resolution must not abort Final Test.
+    assert ranking_validation_metrics_match(reference, reference + 1e-5)
+    assert ranking_validation_metrics_match(reference, reference + 5e-4)
+    assert not ranking_validation_metrics_match(reference, reference + 1e-2)
+    # Non-ranking metrics keep the original strict comparator.
+    assert not validation_metrics_match(reference, reference + 1e-3)
+
+
+def test_paper_runner_retries_only_unconsumed_final_test(tmp_path):
+    final_path = tmp_path / "final_test_metrics.json"
+    unconsumed = {"status": "final_test_outcome_unknown", "test_evaluation_count": 0}
+    assert _retryable_unconsumed_final_test(unconsumed, final_path)
+
+    final_path.write_text("{}", encoding="utf-8")
+    assert not _retryable_unconsumed_final_test(unconsumed, final_path)
+    assert not _retryable_unconsumed_final_test(
+        {"status": "final_test_outcome_unknown", "test_evaluation_count": 1},
+        tmp_path / "missing.json",
+    )
+    assert not _retryable_unconsumed_final_test(
+        {"status": "validation_complete", "test_evaluation_count": 0},
+        tmp_path / "missing2.json",
+    )
 
 
 def test_paper_runner_uses_fixed_nc_split_and_seed_independent_config_hash(tmp_path):
