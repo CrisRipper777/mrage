@@ -34,12 +34,13 @@ from src.tasks.common import load_state_dict_cpu
 from src.utils.seeds import set_seed
 
 
-DATASETS = ("Grocery", "Toys", "Reddit-S", "ele-fashion")
+DATASETS = ("Grocery", "Toys", "Reddit-S", "ele-fashion", "Movies")
 DEFAULT_SEEDS = (42, 43, 44)
 ADOPTED_SELECTION = (
     PROJECT_ROOT / "experiments/nc5_test_exploration_20261031/adopted_selection.json"
 )
 DEFAULT_CACHE_ROOT = Path("/hdd1/DataInHere/YHF/mrage/artifacts/semantic_graphs")
+DEFAULT_EXTRA_ROOTS = (Path("/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full"),)
 
 # Forward order in `Model.forward`: two private calls per modality followed by
 # two collaborative physical calls.  The labels are assigned by call order,
@@ -353,6 +354,7 @@ def discover_adopted_checkpoints(
     *,
     datasets: Iterable[str] | None = None,
     seeds: Iterable[int] | None = None,
+    extra_roots: Iterable[str | Path] | None = None,
 ) -> list[CheckpointRecord]:
     """Locate Full MRAGE checkpoints from the adopted selection manifest."""
     selection = json.loads(ADOPTED_SELECTION.read_text(encoding="utf-8"))
@@ -389,7 +391,61 @@ def discover_adopted_checkpoints(
                     source=str(run_dir),
                 )
             )
+    seen = {str(record.checkpoint) for record in records}
+    for record in discover_extra_checkpoints(
+        roots=extra_roots if extra_roots is not None else DEFAULT_EXTRA_ROOTS,
+        datasets=wanted_datasets,
+        seeds=wanted_seeds,
+    ):
+        if str(record.checkpoint) not in seen:
+            records.append(record)
+            seen.add(str(record.checkpoint))
     records.sort(key=lambda record: (DATASETS.index(record.dataset), record.training_seed))
+    return records
+
+
+def discover_extra_checkpoints(
+    *,
+    roots: Iterable[str | Path],
+    datasets: Iterable[str],
+    seeds: Iterable[int],
+) -> list[CheckpointRecord]:
+    """Discover Figure-3-only checkpoints outside the adopted-selection JSON."""
+    wanted_datasets = set(datasets)
+    wanted_seeds = set(int(value) for value in seeds)
+    records: list[CheckpointRecord] = []
+    for root in roots:
+        root_path = Path(root).expanduser()
+        if not root_path.is_dir():
+            continue
+        for checkpoint in sorted(
+            root_path.glob("*/nc/mrage/*/seed-*/best_validation.pt")
+        ):
+            seed_dir = checkpoint.parent
+            try:
+                seed = int(seed_dir.name.split("-", 1)[1])
+            except (IndexError, ValueError):
+                continue
+            if seed not in wanted_seeds:
+                continue
+            config = seed_dir / "config_resolved.yaml"
+            if not config.is_file():
+                continue
+            cfg = OmegaConf.load(config)
+            dataset = str(cfg.dataset.name)
+            if dataset not in wanted_datasets:
+                continue
+            records.append(
+                CheckpointRecord(
+                    dataset=dataset,
+                    training_seed=seed,
+                    run_dir=seed_dir,
+                    checkpoint=checkpoint,
+                    config=config,
+                    configuration="figure3_full_movies_validation",
+                    source=str(seed_dir),
+                )
+            )
     return records
 
 
@@ -400,6 +456,7 @@ def resolve_checkpoint_records(
     run_dir: str | Path | None = None,
     checkpoint: str | Path | None = None,
     all_datasets: bool = False,
+    extra_roots: Iterable[str | Path] | None = None,
 ) -> list[CheckpointRecord]:
     if run_dir is not None or checkpoint is not None:
         if run_dir is None:
@@ -432,7 +489,9 @@ def resolve_checkpoint_records(
             )
         ]
     datasets = DATASETS if all_datasets else ((dataset,) if dataset else DATASETS)
-    return discover_adopted_checkpoints(datasets=datasets, seeds=seeds)
+    return discover_adopted_checkpoints(
+        datasets=datasets, seeds=seeds, extra_roots=extra_roots
+    )
 
 
 @dataclass

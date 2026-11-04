@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA = PROJECT_ROOT / "experiments/mrage_figure3_mechanism/data"
 DEFAULT_FIGURES = PROJECT_ROOT / "experiments/mrage_figure3_mechanism/figures"
 
-DATASETS = ("Grocery", "Toys", "Reddit-S", "ele-fashion")
+DATASETS = ("Grocery", "Toys", "Reddit-S", "ele-fashion", "Movies")
 CONTEXTS = (
     "private_text_physical",
     "private_text_semantic",
@@ -50,6 +50,7 @@ DATASET_COLORS = {
     "Toys": "#eb6834",
     "Reddit-S": "#1baf7a",
     "ele-fashion": "#eda100",
+    "Movies": "#e87ba4",
 }
 INK = "#0b0b0b"
 SECONDARY = "#52514e"
@@ -296,9 +297,9 @@ def plot_panel_b(ax, cax):
     return image
 
 
-def _grouped_bars(ax, summary, metric: str, error: str, ylabel: str, show_xlabels: bool):
+def _grouped_bars(ax, summary, metric: str, error: str, ylabel: str, show_xlabels: bool, annotate_groups=None):
     x = np.arange(len(GROUPS))
-    width = 0.18
+    width = 0.16
     for dataset_index, dataset in enumerate(DATASETS):
         means, errors = [], []
         for group_name, _ in GROUPS:
@@ -323,7 +324,11 @@ def _grouped_bars(ax, summary, metric: str, error: str, ylabel: str, show_xlabel
             label=dataset,
             zorder=3,
         )
-        for bar, mean in zip(bars, means):
+        for group_name, bar, mean in zip(
+            [name for name, _ in GROUPS], bars, means
+        ):
+            if annotate_groups is not None and group_name not in annotate_groups:
+                continue
             height = bar.get_height()
             if abs(mean) < 8.0e-4:
                 continue
@@ -333,7 +338,7 @@ def _grouped_bars(ax, summary, metric: str, error: str, ylabel: str, show_xlabel
                 f"{mean:.3f}",
                 ha="center",
                 va="bottom" if height >= 0 else "top",
-                fontsize=4.7,
+                fontsize=4.2,
                 color=SECONDARY,
             )
     ax.axhline(0.0, color=MUTED, linewidth=0.6, zorder=2)
@@ -352,13 +357,29 @@ def _grouped_bars(ax, summary, metric: str, error: str, ylabel: str, show_xlabel
 
 def plot_panel_c(ax_ce, ax_acc):
     summary = _shuffle_summary()
-    _grouped_bars(ax_ce, summary, "delta_ce", "delta_ce_std", "Δ Validation CE", False)
-    _grouped_bars(ax_acc, summary, "delta_acc", "delta_acc_std", "Δ Validation Acc", True)
+    _grouped_bars(
+        ax_ce,
+        summary,
+        "delta_ce",
+        "delta_ce_std",
+        "Δ Validation CE",
+        False,
+        annotate_groups=("collaborative_physical", "all_contexts"),
+    )
+    _grouped_bars(
+        ax_acc,
+        summary,
+        "delta_acc",
+        "delta_acc_std",
+        "Δ Validation Acc",
+        True,
+        annotate_groups=("collaborative_physical", "all_contexts"),
+    )
     ax_acc.set_xlabel("Intervention context", fontsize=7.0, labelpad=3)
     ax_ce.set_title("(c) Frozen router-shuffle sensitivity", loc="left", pad=5, fontweight="bold")
 
 
-def _dataset_legend(fig, anchor=(0.5, 1.0)):
+def _dataset_legend(fig, anchor=(0.5, 1.0), ncol=None, fontsize=5.8):
     handles = [
         Patch(facecolor=DATASET_COLORS[dataset], label=dataset) for dataset in DATASETS
     ]
@@ -366,11 +387,11 @@ def _dataset_legend(fig, anchor=(0.5, 1.0)):
         handles=handles,
         loc="upper center",
         bbox_to_anchor=anchor,
-        ncol=4,
+        ncol=ncol or len(DATASETS),
         frameon=False,
-        fontsize=6.2,
-        handlelength=1.0,
-        columnspacing=1.2,
+        fontsize=fontsize,
+        handlelength=0.9,
+        columnspacing=1.0,
     )
 
 
@@ -401,7 +422,7 @@ def render_individual_panels():
     ax_ce = fig.add_subplot(grid[0])
     ax_acc = fig.add_subplot(grid[1])
     plot_panel_c(ax_ce, ax_acc)
-    _dataset_legend(fig, anchor=(0.5, 1.0))
+    _dataset_legend(fig, anchor=(0.5, 1.0), ncol=5, fontsize=5.7)
     fig.text(
         0.01,
         0.005,
@@ -438,7 +459,7 @@ def render_combined():
     plot_panel_a(ax_a1, ax_a2, cax_a, show_l2_note=False)
     plot_panel_b(ax_b, cax_b)
     plot_panel_c(ax_ce, ax_acc)
-    _dataset_legend(fig, anchor=(0.5, 1.0))
+    _dataset_legend(fig, anchor=(0.5, 1.0), ncol=5, fontsize=5.7)
     fig.text(
         0.01,
         0.005,
@@ -452,7 +473,7 @@ def render_combined():
 
 def render_routing_by_dataset():
     matrices = _routing_by_dataset()
-    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.2))
+    fig, axes = plt.subplots(3, 2, figsize=(7.2, 7.6))
     norm = Normalize(vmin=0.0, vmax=0.85)
     for ax, dataset in zip(axes.flat, DATASETS):
         _format_heatmap(
@@ -465,6 +486,8 @@ def render_routing_by_dataset():
             cmap=SEQUENTIAL,
             fmt="{:.2f}",
         )
+    for ax in axes.flat[len(DATASETS):]:
+        ax.axis("off")
     fig.text(
         0.5,
         0.005,
@@ -475,6 +498,51 @@ def render_routing_by_dataset():
     )
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     _save(fig, "figure3b_by_dataset")
+
+
+
+
+def render_single_context_shuffle():
+    summary = _shuffle_summary()
+    ce = np.zeros((len(CONTEXTS), len(DATASETS)), dtype=float)
+    acc = np.zeros((len(CONTEXTS), len(DATASETS)), dtype=float)
+    for row, context in enumerate(CONTEXTS):
+        for column, dataset in enumerate(DATASETS):
+            entry = summary.get((dataset, context), {})
+            ce_value = entry.get("delta_ce", 0.0)
+            acc_value = entry.get("delta_acc", 0.0)
+            ce[row, column] = 0.0 if abs(ce_value) < 5.0e-4 else ce_value
+            acc[row, column] = 0.0 if abs(acc_value) < 5.0e-4 else acc_value
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.1))
+    panels = (
+        (axes[0], ce, "Δ Validation CE", 0.05, "{:.3f}"),
+        (axes[1], acc, "Δ Validation Acc", 0.025, "{:.3f}"),
+    )
+    for ax, values, title, limit, fmt in panels:
+        norm = Normalize(vmin=0.0, vmax=limit)
+        image = ax.imshow(values, cmap=SEQUENTIAL, norm=norm, aspect="auto")
+        ax.set_xticks(np.arange(len(DATASETS)))
+        ax.set_xticklabels(DATASETS, rotation=25, ha="right", fontsize=6.2)
+        ax.set_yticks(np.arange(len(CONTEXTS)))
+        ax.set_yticklabels([CONTEXT_LABELS[context] for context in CONTEXTS], fontsize=6.2)
+        ax.set_title(title, loc="left", pad=4, fontweight="bold", fontsize=8.0)
+        ax.tick_params(length=0)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        _annotate_heatmap(ax, values, norm=norm, cmap=SEQUENTIAL, fmt=fmt, fontsize=5.8)
+        colorbar = fig.colorbar(image, ax=ax, fraction=0.035, pad=0.02)
+        colorbar.ax.tick_params(labelsize=5.8)
+        colorbar.outline.set_linewidth(0.4)
+    fig.text(
+        0.5,
+        0.005,
+        "Single-context shuffle, seeds 42–44; positive means worse Validation performance",
+        ha="center",
+        fontsize=6.3,
+        color=SECONDARY,
+    )
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    _save(fig, "figure3c_single_contexts")
 
 
 def main() -> int:
@@ -490,6 +558,7 @@ def main() -> int:
     render_individual_panels()
     render_combined()
     render_routing_by_dataset()
+    render_single_context_shuffle()
     print(f"Wrote Figure 3 panels to {args.figures}")
     return 0
 

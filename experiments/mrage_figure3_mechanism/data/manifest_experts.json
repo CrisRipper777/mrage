@@ -60,7 +60,7 @@
       "best_epoch": 72,
       "saved_val_acc": 0.8050253391265869,
       "saved_val_macro_f1": 0.7781104880405362,
-      "recomputed_val_ce": 0.6734857559204102,
+      "recomputed_val_ce": 0.6734855771064758,
       "recomputed_val_acc": 0.8050253987312317,
       "recomputed_val_macro_f1": 0.7781104880405362,
       "device": "cuda:0"
@@ -151,9 +151,48 @@
       "best_epoch": 152,
       "saved_val_acc": 0.8742968440055847,
       "saved_val_macro_f1": 0.6846895814250938,
-      "recomputed_val_ce": 0.42994800209999084,
+      "recomputed_val_ce": 0.42994803190231323,
       "recomputed_val_acc": 0.8742968440055847,
       "recomputed_val_macro_f1": 0.6846895814250938,
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Movies",
+      "training_seed": 42,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full/Movies/nc/mrage/413afa0d5c05843e/seed-42/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full/Movies/nc/mrage/413afa0d5c05843e/seed-42/config_resolved.yaml",
+      "best_epoch": 84,
+      "saved_val_acc": 0.5575884580612183,
+      "saved_val_macro_f1": 0.4733553463951067,
+      "recomputed_val_ce": 1.4068547487258911,
+      "recomputed_val_acc": 0.5575884580612183,
+      "recomputed_val_macro_f1": 0.4733553463951067,
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Movies",
+      "training_seed": 43,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full/Movies/nc/mrage/413afa0d5c05843e/seed-43/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full/Movies/nc/mrage/413afa0d5c05843e/seed-43/config_resolved.yaml",
+      "best_epoch": 73,
+      "saved_val_acc": 0.5524895191192627,
+      "saved_val_macro_f1": 0.4906240901835554,
+      "recomputed_val_ce": 1.3797274827957153,
+      "recomputed_val_acc": 0.5524894595146179,
+      "recomputed_val_macro_f1": 0.4906240901835554,
+      "device": "cuda:0"
+    },
+    {
+      "dataset": "Movies",
+      "training_seed": 44,
+      "checkpoint": "/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full/Movies/nc/mrage/413afa0d5c05843e/seed-44/best_validation.pt",
+      "config": "/hdd1/DataInHere/YHF/mrage/outputs/mrage_figure3_movies_full/Movies/nc/mrage/413afa0d5c05843e/seed-44/config_resolved.yaml",
+      "best_epoch": 79,
+      "saved_val_acc": 0.5572885274887085,
+      "saved_val_macro_f1": 0.4757709536849143,
+      "recomputed_val_ce": 1.3920000791549683,
+      "recomputed_val_acc": 0.5572885274887085,
+      "recomputed_val_macro_f1": 0.4757709536849143,
       "device": "cuda:0"
     }
   ],
